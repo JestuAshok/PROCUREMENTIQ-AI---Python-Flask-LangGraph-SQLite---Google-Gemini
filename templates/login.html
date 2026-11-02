@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — PROCUREMENTIQ AI</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+  <div class="auth-split-container">
+    
+    <!-- Left Column: Supply Chain Visual & Checklist Card -->
+    <div class="auth-column auth-visual-column">
+      <div class="auth-visual-header">
+        <a href="{{ url_for('dashboard.landing') }}" class="brand-logo">
+          <div class="logo-swirl"></div>
+          <div class="brand-text">
+            <span class="brand-title">PROCUREMENT<span>IQ</span> AI</span>
+            <span class="brand-tagline">Autonomous Procurement Intelligence</span>
+          </div>
+        </a>
+      </div>
+
+      <div class="auth-visual-content">
+        <!-- Floating Checklist Card matching screenshot -->
+        <div class="auth-checklist-card">
+          <h3>Intelligent Procurement<br>for a Stronger Supply Chain</h3>
+          <ul class="checklist-items">
+            <li class="checklist-item">
+              <span class="checklist-icon"><i class="bi bi-check-lg"></i></span>
+              <span>Analyze supplier quotations</span>
+            </li>
+            <li class="checklist-item">
+              <span class="checklist-icon"><i class="bi bi-check-lg"></i></span>
+              <span>Assess delivery and compliance risks</span>
+            </li>
+            <li class="checklist-item">
+              <span class="checklist-icon"><i class="bi bi-check-lg"></i></span>
+              <span>Compare total costs</span>
+            </li>
+            <li class="checklist-item">
+              <span class="checklist-icon"><i class="bi bi-check-lg"></i></span>
+              <span>Get explainable vendor recommendations</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Background logistics artwork -->
+      <div class="auth-bg-art" style="background-image: url('{{ url_for('static', filename='images/hero_logistics.jpg') }}');"></div>
+    </div>
+
+    <!-- Right Column: White Card Sign In Form -->
+    <div class="auth-column auth-form-column">
+      <div class="auth-form-card">
+        <div class="auth-header text-center">
+          <h1>Welcome Back</h1>
+          <p>Sign in to your PROCUREMENTIQ AI account</p>
+        </div>
+
+        <!-- Flash alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <span>{{ message }}</span>
+                <button type="button" class="alert-close">&times;</button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address</label>
+            <div class="input-icon-wrapper">
+              <i class="bi bi-envelope input-icon"></i>
+              <input type="email" id="login-email" name="email" class="form-control" placeholder="Enter your email" value="{{ email or 'jahnavi@procurementiq.ai' }}" required autofocus>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <div class="input-icon-wrapper">
+              <i class="bi bi-lock input-icon"></i>
+              <input type="password" id="login-password" name="password" class="form-control" placeholder="Enter your password" value="Password123!" required>
+              <button type="button" class="password-toggle-btn" data-target="login-password" aria-label="Toggle password visibility">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-options-row">
+            <label class="remember-label">
+              <input type="checkbox" name="remember" checked>
+              <span>Remember me</span>
+            </label>
+            <a href="#" onclick="alert('Demo Mode: Use Jahnavi\'s default password: Password123!')" class="forgot-link">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary auth-submit-btn" id="btn-login-submit">
+            Sign In
+          </button>
+
+          <div class="auth-divider">
+            <span>or continue with</span>
+          </div>
+
+          <div class="social-auth-grid">
+            <button type="button" class="btn-social" onclick="alert('Enterprise SSO integration is active via your corporate directory.')">
+              <i class="bi bi-google text-danger"></i>
+              <span>Google</span>
+            </button>
+            <button type="button" class="btn-social" onclick="alert('Enterprise SSO integration is active via your corporate directory.')">
+              <i class="bi bi-microsoft text-primary"></i>
+              <span>Microsoft</span>
+            </button>
+          </div>
+
+          <div class="auth-footer">
+            <span>Don't have an account? </span>
+            <a href="{{ url_for('auth.signup') }}" id="link-to-signup">Sign up</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

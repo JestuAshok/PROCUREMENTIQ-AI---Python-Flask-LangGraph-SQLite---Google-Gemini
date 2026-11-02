@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Contracts & Reports — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Executive Contracts & Procurement Reports</h1>
+    <p style="color: var(--text-secondary); font-size: 0.92rem;">
+      Generate auditable PDF and CSV reports containing complete landed costs, risk analyses, and explainable recommendations.
+    </p>
+  </div>
+</div>
+
+<!-- Available Reports List -->
+<div class="data-table-card">
+  <div class="table-card-header">
+    <h2 class="table-card-title">Procurement Request Dossiers ({{ requests_list|length }})</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table class="custom-table reports-table" style="table-layout: fixed; width: 100%;">
+      <colgroup>
+        <col style="width: 14%;"> <!-- Request Code -->
+        <col style="width: 24%;"> <!-- Item / Scope -->
+        <col style="width: 13%;"> <!-- Budget -->
+        <col style="width: 7%;">  <!-- Quotes -->
+        <col style="width: 15%;"> <!-- Recommended Vendor -->
+        <col style="width: 9%;">  <!-- Status -->
+        <col style="width: 18%;"> <!-- Reports Actions -->
+      </colgroup>
+      <thead>
+        <tr>
+          <th style="padding-left: 14px;">Request Code</th>
+          <th>Item / Scope</th>
+          <th>Budget</th>
+          <th style="text-align: center;">Quotes</th>
+          <th>Recommended Vendor</th>
+          <th style="text-align: center;">Status</th>
+          <th style="text-align: right; padding-right: 14px;">Reports</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in requests_list %}
+        <tr>
+          <td class="reports-code-cell" style="padding-left: 14px;">
+            <a href="{{ url_for('procurement.request_detail', request_id=r.id) }}" style="color: var(--primary-blue);">
+              {{ r.request_code }}
+            </a>
+          </td>
+          <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ r.item_name }}">
+            {{ r.item_name }}
+          </td>
+          <td style="white-space: nowrap; font-variant-numeric: tabular-nums;">
+            {{ r.currency }} {{ "{:,.2f}".format(r.budget) }}
+          </td>
+          <td style="text-align: center; font-weight: 700; color: var(--dark-navy);">
+            {{ r.quote_count }}
+          </td>
+          <td>
+            {% if r.recommended_vendor %}
+              <span class="badge badge-recommended" style="white-space: nowrap;"><i class="bi bi-star-fill"></i> {{ r.recommended_vendor }}</span>
+            {% else %}
+              <span class="badge badge-muted" style="white-space: nowrap;">Pending Analysis</span>
+            {% endif %}
+          </td>
+          <td style="text-align: center;">
+            <span class="badge {% if r.status == 'Recommendation Ready' %}badge-recommended{% elif r.status == 'Completed' %}badge-muted{% else %}badge-blue{% endif %}" style="white-space: nowrap;">
+              {{ r.status }}
+            </span>
+          </td>
+          <td style="text-align: right; padding-right: 14px; white-space: nowrap;">
+            <div class="reports-btn-group">
+              <a href="{{ url_for('reports.download_pdf', request_id=r.id) }}" target="_blank" class="btn btn-primary btn-sm" id="btn-view-pdf-{{ r.id }}" title="View PDF Dossier in Browser" style="padding: 5px 9px; font-size: 0.76rem;">
+                <i class="bi bi-eye-fill"></i> <span>View</span>
+              </a>
+              <a href="{{ url_for('reports.download_pdf', request_id=r.id, download=1) }}" download="ProcurementIQ_Report_{{ r.request_code }}.pdf" class="btn btn-secondary btn-sm" id="btn-pdf-{{ r.id }}" title="Download PDF File" style="padding: 5px 8px; font-size: 0.76rem;">
+                <i class="bi bi-download"></i> <span>PDF</span>
+              </a>
+              <a href="{{ url_for('reports.download_csv', request_id=r.id) }}" download="ProcurementIQ_Data_{{ r.request_code }}.csv" class="btn btn-secondary btn-sm" id="btn-csv-{{ r.id }}" title="Export Spreadsheet Data" style="padding: 5px 8px; font-size: 0.76rem;">
+                <i class="bi bi-file-earmark-spreadsheet"></i> <span>CSV</span>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            No procurement requests created yet. 
+            <a href="{{ url_for('procurement.new_request') }}" class="btn btn-primary btn-sm" style="margin-left: 10px;">Create Request</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Report Standards & Methodology Info Box -->
+<div class="card" style="margin-top: 24px; background: linear-gradient(135deg, #F8FAFF 0%, #FFFFFF 100%);">
+  <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 8px;">
+    <i class="bi bi-shield-check text-success"></i> Audit Governance & Compliance Standards
+  </h3>
+  <p style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+    All generated reports strictly reflect saved database quotation records without simulated figures. Calculations for subtotal, discount, tax, freight, and installation are documented with formula transparency.
+  </p>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 0.82rem;">
+    <div style="background-color: #FFFFFF; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+      <strong style="color: var(--dark-navy); display: block; margin-bottom: 2px;">Format Integrity</strong>
+      <span>Built with ReportLab vector layouts and standard RFC 4180 CSV specifications.</span>
+    </div>
+    <div style="background-color: #FFFFFF; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+      <strong style="color: var(--dark-navy); display: block; margin-bottom: 2px;">Decision Transparency</strong>
+      <span>Explicitly highlights mandatory criteria pass/fail gating and negotiation playbook recommendations.</span>
+    </div>
+    <div style="background-color: #FFFFFF; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+      <strong style="color: var(--dark-navy); display: block; margin-bottom: 2px;">Audit Timestamps</strong>
+      <span>Includes exact UTC generation timestamp and user accountability footprint.</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

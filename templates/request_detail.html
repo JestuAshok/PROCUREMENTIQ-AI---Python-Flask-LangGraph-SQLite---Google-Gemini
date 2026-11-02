@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}{{ proc_req.request_code }} — Procurement Request Details{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">{{ proc_req.item_name }}</h1>
+      <span class="badge badge-blue" style="font-size: 0.9rem;">{{ proc_req.request_code }}</span>
+      <span class="badge {% if proc_req.status == 'Recommendation Ready' %}badge-recommended{% elif proc_req.status == 'Risk Assessment' %}badge-risk-medium{% else %}badge-blue{% endif %}">
+        {{ proc_req.status }}
+      </span>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.92rem;">
+      Category: <strong>{{ proc_req.category }}</strong> &middot; Created on {{ proc_req.created_at|string|truncate(10, True, '') }}
+    </p>
+  </div>
+
+  <div style="display: flex; gap: 12px;">
+    {% if quotations %}
+      <a href="{{ url_for('analysis.review_quotations', request_id=proc_req.id) }}" class="btn btn-secondary">
+        <i class="bi bi-pencil-square"></i>
+        <span>Review Extracted Quotations</span>
+      </a>
+      <a href="{{ url_for('workflow.view_workflow', request_id=proc_req.id) }}" class="btn btn-primary" id="btn-run-workflow">
+        <i class="bi bi-play-circle-fill"></i>
+        <span>Run 6-Agent AI Analysis</span>
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Request Specifications Grid -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px;">
+  <div class="card">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 16px;">
+      Procurement Specifications
+    </h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.9rem;">
+      <div>
+        <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Required Quantity</span>
+        <strong style="font-size: 1.1rem; color: var(--dark-navy);">{{ proc_req.quantity }} unit(s)</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Budget Ceiling</span>
+        <strong style="font-size: 1.1rem; color: var(--green-accent);">{{ proc_req.currency }} {{ "{:,.2f}".format(proc_req.budget) }}</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Required Delivery Date</span>
+        <strong>{{ proc_req.required_delivery_date }}</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Delivery Location</span>
+        <strong>{{ proc_req.delivery_location }}</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Minimum Mandatory Warranty</span>
+        <strong>{{ proc_req.min_warranty_months }} Months</strong>
+      </div>
+      <div>
+        <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase;">Preferred Payment Terms</span>
+        <strong>{{ proc_req.payment_terms_pref }}</strong>
+      </div>
+    </div>
+
+    {% if proc_req.additional_requirements %}
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+        <span style="color: var(--text-muted); display: block; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 4px;">Technical Specifications</span>
+        <p style="font-size: 0.88rem; color: var(--text-secondary);">{{ proc_req.additional_requirements }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Quotation Upload Dropzone Card -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 6px;">
+        Upload Quotations
+      </h3>
+      <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 14px;">
+        Accepts PDF, XLSX, or CSV documents.
+      </p>
+
+      <form action="{{ url_for('procurement.upload_quotations', request_id=proc_req.id) }}" method="POST" enctype="multipart/form-data">
+        <div id="quotationDropzone" style="border: 2px dashed var(--primary-blue); border-radius: var(--radius-lg); padding: 24px 16px; text-align: center; background-color: var(--pastel-blue); cursor: pointer; transition: all 0.2s;">
+          <i class="bi bi-cloud-arrow-up" style="font-size: 2rem; color: var(--primary-blue); display: block; margin-bottom: 8px;"></i>
+          <span style="font-size: 0.88rem; font-weight: 600; color: var(--dark-navy); display: block;">Drag & drop files or click to browse</span>
+          <span style="font-size: 0.75rem; color: var(--text-secondary);">PDF, XLSX, CSV up to 16MB</span>
+          <input type="file" id="quotationFileInput" name="quotation_files" multiple accept=".pdf,.xlsx,.xls,.csv" style="display: none;">
+        </div>
+
+        <div id="selectedFilesList" style="margin-top: 10px; font-size: 0.8rem;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 14px;" id="btn-upload-submit">
+          <i class="bi bi-upload"></i>
+          <span>Process & Extract Documents</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- 1-Click Sample Quotations Loader -->
+    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color); text-align: center;">
+      <span style="display: block; font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 8px;">Want to test immediately?</span>
+      <form action="{{ url_for('procurement.load_sample_quotations', request_id=proc_req.id) }}" method="POST">
+        <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;" id="btn-load-samples">
+          <i class="bi bi-magic text-primary"></i>
+          <span>1-Click: Load 3 Sample Quotes (PDF/XLSX/CSV)</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Uploaded Quotations List -->
+<div class="data-table-card">
+  <div class="table-card-header">
+    <div>
+      <h2 class="table-card-title">Processed Supplier Quotations ({{ quotations|length }})</h2>
+      <p style="font-size: 0.82rem; color: var(--text-secondary);">Review extracted figures before launching the six-agent workflow</p>
+    </div>
+    {% if quotations %}
+      <a href="{{ url_for('analysis.review_quotations', request_id=proc_req.id) }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-pencil"></i>
+        <span>Edit / Confirm Figures</span>
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Supplier</th>
+          <th>Quote No</th>
+          <th>Unit Price</th>
+          <th>Qty</th>
+          <th>Total Landed Cost</th>
+          <th>Delivery</th>
+          <th>Warranty</th>
+          <th>Confidence</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in quotations %}
+        <tr>
+          <td>
+            <strong>{{ q.supplier_name }}</strong>
+            {% if q.compliance_status == 'Verified' %}
+              <i class="bi bi-patch-check-fill text-success" title="Verified Vendor" style="font-size: 0.85rem; margin-left: 4px;"></i>
+            {% endif %}
+            <div style="font-size: 0.74rem; color: var(--text-muted);">{{ q.filename }}</div>
+          </td>
+          <td>{{ q.quotation_number or 'N/A' }}</td>
+          <td>{{ q.currency }} {{ "{:,.2f}".format(q.unit_price) }}</td>
+          <td>{{ q.quantity }}</td>
+          <td><strong style="color: var(--primary-blue);">{{ q.currency }} {{ "{:,.2f}".format(q.total_cost) }}</strong></td>
+          <td>{{ q.delivery_days }} days</td>
+          <td>{{ q.warranty_months }} mo</td>
+          <td>
+            <span class="badge {% if q.extraction_confidence >= 90 %}badge-recommended{% elif q.extraction_confidence >= 75 %}badge-blue{% else %}badge-needs-review{% endif %}">
+              {{ q.extraction_confidence }}%
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <a href="{{ url_for('analysis.review_quotations', request_id=request.id) }}" class="btn btn-secondary btn-sm">
+              Review
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            No quotations uploaded yet for this request. Upload supplier documents above or use the 1-Click Sample Quotes loader.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const dropzone = document.getElementById('quotationDropzone');
+  const fileInput = document.getElementById('quotationFileInput');
+  if (dropzone && fileInput) {
+    dropzone.addEventListener('click', () => fileInput.click());
+  }
+});
+</script>
+{% endblock %}

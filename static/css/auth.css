@@ -1,0 +1,312 @@
+/* ==========================================================================
+   PROCUREMENTIQ AI — AUTHENTICATION STYLING (LOGIN & SIGNUP)
+   Matches the split-view pastel layout from the uploaded UI reference.
+   ========================================================================== */
+
+.auth-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+}
+
+.auth-split-container {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Left & Right Columns */
+.auth-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  position: relative;
+  justify-content: center;
+}
+
+.auth-form-column {
+  background-color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.03);
+}
+
+.auth-form-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 20px;
+}
+
+.auth-header {
+  margin-bottom: 28px;
+  text-align: left;
+}
+
+.auth-header.text-center {
+  text-align: center;
+}
+
+.auth-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--dark-navy);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.auth-header p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* Auth Visual Column */
+.auth-visual-column {
+  background: linear-gradient(135deg, #F0F5FF 0%, #E8F0FE 50%, #F5F0FF 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.auth-visual-header {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  z-index: 5;
+}
+
+.auth-visual-content {
+  margin-top: 100px;
+  z-index: 4;
+  max-width: 500px;
+}
+
+.auth-visual-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--dark-navy);
+  margin-bottom: 24px;
+  line-height: 1.2;
+}
+
+/* Intelligent Procurement Checklist Card (Login Left) */
+.auth-checklist-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  box-shadow: 0 15px 35px rgba(23, 37, 84, 0.07);
+  margin-bottom: 30px;
+}
+
+.auth-checklist-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--dark-navy);
+  margin-bottom: 18px;
+}
+
+.checklist-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--dark-navy);
+}
+
+.checklist-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--pastel-blue);
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Feature Pills in Signup Right Column */
+.signup-feature-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.signup-feature-pill {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(230, 234, 242, 0.8);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-subtle);
+  transition: var(--transition-fast);
+}
+
+.signup-feature-pill:hover {
+  transform: translateX(4px);
+  background: #FFFFFF;
+}
+
+.feature-pill-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.feature-pill-icon.purple { background-color: var(--pastel-lavender); color: var(--lavender-accent); }
+.feature-pill-icon.orange { background-color: var(--pastel-peach); color: var(--orange-accent); }
+.feature-pill-icon.blue { background-color: var(--pastel-blue); color: var(--primary-blue); }
+.feature-pill-icon.green { background-color: var(--pastel-mint); color: var(--green-accent); }
+
+.feature-pill-text h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--dark-navy);
+  margin-bottom: 2px;
+}
+
+.feature-pill-text p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Background image overlay */
+.auth-bg-art {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 55%;
+  background-size: cover;
+  background-position: center bottom;
+  opacity: 0.45;
+  pointer-events: none;
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%);
+}
+
+/* Form Helper Utilities */
+.form-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  font-size: 0.85rem;
+}
+
+.remember-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.forgot-link {
+  color: var(--primary-blue);
+  font-weight: 500;
+}
+
+.auth-submit-btn {
+  width: 100%;
+  padding: 13px;
+  font-size: 1rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 20px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin: 20px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.auth-divider span {
+  padding: 0 12px;
+}
+
+.social-auth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark-navy);
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+
+.btn-social:hover {
+  background-color: var(--bg-primary);
+  border-color: #CBD5E1;
+}
+
+.auth-footer {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.auth-footer a {
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .auth-split-container {
+    flex-direction: column;
+  }
+  .auth-visual-column {
+    display: none;
+  }
+  .auth-form-column {
+    padding: 30px 20px;
+  }
+}

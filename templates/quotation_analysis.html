@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Review & Confirm Quotations — {{ proc_req.request_code }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <a href="{{ url_for('procurement.request_detail', request_id=proc_req.id) }}" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Request
+      </a>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Review & Confirm Quotations</h1>
+      <span class="badge badge-blue">{{ proc_req.request_code }}</span>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">
+      Verify and fine-tune extracted supplier pricing, freight, and terms before running the autonomous 6-agent workflow.
+    </p>
+  </div>
+
+  <div style="display: flex; gap: 12px;">
+    <form action="{{ url_for('workflow.run_workflow', request_id=proc_req.id) }}" method="POST">
+      <button type="submit" class="btn btn-orange" id="btn-run-all-agents">
+        <i class="bi bi-play-circle-fill"></i>
+        <span>Confirm All & Run 6-Agent Workflow</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Comparison Summary Banner -->
+<div class="card" style="padding: 16px 24px; margin-bottom: 24px; background: linear-gradient(135deg, #F0F5FF 0%, #FFFFFF 100%);">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Target Equipment</span>
+      <div style="font-size: 1.1rem; font-weight: 700; color: var(--dark-navy);">{{ proc_req.item_name }} ({{ proc_req.quantity }} units)</div>
+    </div>
+    <div>
+      <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Allocated Budget</span>
+      <div style="font-size: 1.1rem; font-weight: 700; color: var(--green-accent);">{{ proc_req.currency }} {{ "{:,.2f}".format(proc_req.budget) }}</div>
+    </div>
+    <div>
+      <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Delivery Deadline</span>
+      <div style="font-size: 1.1rem; font-weight: 700; color: var(--dark-navy);">{{ proc_req.required_delivery_date }}</div>
+    </div>
+    <div>
+      <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Mandatory Warranty</span>
+      <div style="font-size: 1.1rem; font-weight: 700; color: var(--dark-navy);">{{ proc_req.min_warranty_months }} Months</div>
+    </div>
+  </div>
+</div>
+
+<!-- Editable Quotation Cards List -->
+<div style="display: flex; flex-direction: column; gap: 24px;">
+  {% for q in quotations %}
+  <div class="card" id="quote-card-{{ q.id }}" style="border-left: 4px solid var(--primary-blue);">
+    <!-- Card Header with Confidence & Extraction Metadata -->
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--dark-navy);">{{ q.supplier_name }}</h3>
+          <span class="badge {% if q.extraction_confidence >= 90 %}badge-recommended{% elif q.extraction_confidence >= 75 %}badge-blue{% else %}badge-needs-review{% endif %}">
+            <i class="bi bi-shield-check"></i> {{ q.extraction_confidence }}% Extraction Confidence
+          </span>
+          {% if q.is_confirmed %}
+            <span class="badge badge-recommended"><i class="bi bi-check-circle"></i> Verified</span>
+          {% endif %}
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+          Document: <code>{{ q.filename }}</code> &middot; Quote Ref: <code>{{ q.quotation_number or 'N/A' }}</code>
+        </div>
+      </div>
+
+      <div style="text-align: right;">
+        <span style="font-size: 0.78rem; color: var(--text-muted); display: block;">Calculated Landed Cost</span>
+        <strong style="font-size: 1.5rem; color: var(--primary-blue);">
+          {{ q.currency }} {{ "{:,.2f}".format(q.total_cost) }}
+        </strong>
+      </div>
+    </div>
+
+    <!-- Missing fields notice if any -->
+    {% if q.missing_list %}
+      <div class="alert alert-warning" style="margin-bottom: 20px;">
+        <i class="bi bi-exclamation-triangle" style="margin-right: 6px;"></i>
+        <span><strong>Notice:</strong> Document parser marked the following optional fields as "Not provided": {{ q.missing_list|join(', ') }}. Please review below.</span>
+      </div>
+    {% endif %}
+
+    <!-- Edit Form -->
+    <form action="{{ url_for('analysis.update_quote', request_id=proc_req.id, quote_id=q.id) }}" method="POST">
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Supplier Name</label>
+          <input type="text" name="supplier_name" class="form-control" value="{{ q.supplier_name }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quotation Number</label>
+          <input type="text" name="quotation_number" class="form-control" value="{{ q.quotation_number or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit Price ({{ q.currency }}) *</label>
+          <input type="number" step="0.01" name="unit_price" class="form-control" value="{{ q.unit_price }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity Quoted *</label>
+          <input type="number" name="quantity" class="form-control" value="{{ q.quantity }}" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Promotional Discount ({{ q.currency }})</label>
+          <input type="number" step="0.01" name="discount_amount" class="form-control" value="{{ q.discount_amount or 0.0 }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Applicable Tax Rate (%)</label>
+          <input type="number" step="0.1" name="tax_rate" class="form-control" value="{{ q.tax_rate or 5.0 }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Freight & Shipping ({{ q.currency }})</label>
+          <input type="number" step="0.01" name="shipping_cost" class="form-control" value="{{ q.shipping_cost or 0.0 }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Installation & Setup ({{ q.currency }})</label>
+          <input type="number" step="0.01" name="installation_cost" class="form-control" value="{{ q.installation_cost or 0.0 }}">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Warranty (Months) *</label>
+          <input type="number" name="warranty_months" class="form-control" value="{{ q.warranty_months or 12 }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Delivery Timeline (Days) *</label>
+          <input type="number" name="delivery_days" class="form-control" value="{{ q.delivery_days or 30 }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Terms</label>
+          <input type="text" name="payment_terms" class="form-control" value="{{ q.payment_terms or 'Net 30' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quote Validity Date</label>
+          <input type="date" name="quote_validity_date" class="form-control" value="{{ q.quote_validity_date or '2026-12-15' }}">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 16px; margin-top: 10px;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">
+          <i class="bi bi-info-circle"></i> Changes automatically update line items and re-verify arithmetic.
+        </span>
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-secondary btn-sm">
+            <i class="bi bi-check-lg"></i>
+            <span>Confirm & Update Figures</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  {% else %}
+  <div class="card" style="text-align: center; padding: 60px;">
+    <p style="color: var(--text-secondary); margin-bottom: 16px;">No quotations found for this request.</p>
+    <a href="{{ url_for('procurement.request_detail', request_id=request.id) }}" class="btn btn-primary">
+      Go to Upload Page
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

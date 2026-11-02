@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Assessment — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Supplier Risk Assessment</h1>
+    <p style="color: var(--text-secondary); font-size: 0.92rem;">
+      Transparent, rule-based operational, delivery, warranty, and commercial terms risk evaluation.
+    </p>
+  </div>
+</div>
+
+<!-- Risk Summary KPI Row -->
+<div class="kpi-cards-grid" style="margin-bottom: 24px;">
+  <div class="kpi-card" style="cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;" onclick="filterByCategory('Low Risk')" title="Click to filter by Low Risk">
+    <div class="kpi-icon-wrapper mint">
+      <i class="bi bi-shield-check"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ counts.low }}</span>
+      <span class="kpi-label">Low Risk Bids</span>
+      <span class="kpi-subtext" style="color: var(--green-accent);">Stable & Verified</span>
+    </div>
+  </div>
+
+  <div class="kpi-card" style="cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;" onclick="filterByCategory('Medium Risk')" title="Click to filter by Medium Risk">
+    <div class="kpi-icon-wrapper orange">
+      <i class="bi bi-shield-exclamation"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ counts.medium }}</span>
+      <span class="kpi-label">Medium Risk</span>
+      <span class="kpi-subtext" style="color: var(--orange-accent);">Mitigations Recommended</span>
+    </div>
+  </div>
+
+  <div class="kpi-card" style="cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;" onclick="filterByCategory('High Risk')" title="Click to filter by High Risk">
+    <div class="kpi-icon-wrapper purple">
+      <i class="bi bi-shield-slash"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ counts.high }}</span>
+      <span class="kpi-label">High Risk</span>
+      <span class="kpi-subtext" style="color: var(--danger);">Critical Gaps / Delays</span>
+    </div>
+  </div>
+
+  <div class="kpi-card" style="cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;" onclick="filterByCategory('Insufficient Data')" title="Click to filter by Insufficient Data">
+    <div class="kpi-icon-wrapper blue">
+      <i class="bi bi-question-circle"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ counts.insufficient }}</span>
+      <span class="kpi-label">Insufficient Data</span>
+      <span class="kpi-subtext">Pending Documents</span>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card" style="padding: 16px 24px; margin-bottom: 24px;">
+  <form id="riskFilterForm" action="{{ url_for('risks.list_risks') }}" method="GET" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+    <div style="width: 240px;">
+      <select id="filterCategory" name="category" class="form-select">
+        <option value="">All Risk Categories</option>
+        <option value="Low Risk" {% if category_filter == 'Low Risk' %}selected{% endif %}>Low Risk</option>
+        <option value="Medium Risk" {% if category_filter == 'Medium Risk' %}selected{% endif %}>Medium Risk</option>
+        <option value="High Risk" {% if category_filter == 'High Risk' %}selected{% endif %}>High Risk</option>
+        <option value="Insufficient Data" {% if category_filter == 'Insufficient Data' %}selected{% endif %}>Insufficient Data</option>
+      </select>
+    </div>
+
+    <div style="width: 260px;">
+      <select id="filterRequest" name="request_id" class="form-select">
+        <option value="">All Procurement Requests</option>
+        {% for r in available_requests %}
+          <option value="{{ r.id }}" {% if request_filter == r.id|string %}selected{% endif %}>{{ r.request_code }} — {{ r.item_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" id="btnFilterApply" class="btn btn-primary btn-sm" style="padding: 10px 20px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+      <i class="bi bi-funnel-fill"></i> Filter
+    </button>
+    <button type="button" id="btnFilterReset" class="btn btn-secondary btn-sm" style="padding: 10px 18px; display: {% if category_filter or request_filter %}inline-flex{% else %}none{% endif %}; align-items: center; gap: 6px; font-weight: 600;">
+      <i class="bi bi-arrow-counterclockwise"></i> Reset
+    </button>
+  </form>
+</div>
+
+<!-- Risk Assessment Records Table -->
+<div class="data-table-card">
+  <div class="table-card-header">
+    <h2 class="table-card-title">Risk Assessment Log ({{ risk_records|length }})</h2>
+    <span style="font-size: 0.8rem; color: var(--text-muted);">Deterministic rule-based risk analysis</span>
+  </div>
+
+  <!-- Desktop & Tablet Fixed-Layout Table -->
+  <div class="table-responsive risk-desktop-table">
+    <table class="custom-table risk-table">
+      <colgroup>
+        <col style="width: 20%;"> <!-- Supplier & RFP -->
+        <col style="width: 12%;"> <!-- Risk Level -->
+        <col style="width: 8%;">  <!-- Score -->
+        <col style="width: 15%;"> <!-- Compliance -->
+        <col style="width: 21%;"> <!-- Risk Factors -->
+        <col style="width: 16%;"> <!-- Mitigations -->
+        <col style="width: 8%;">  <!-- Action -->
+      </colgroup>
+      <thead>
+        <tr>
+          <th style="text-align: left; padding-left: 14px;">Supplier & RFP</th>
+          <th style="text-align: center;">Risk Level</th>
+          <th style="text-align: center;">Score</th>
+          <th style="text-align: center;">Compliance</th>
+          <th style="text-align: left; padding-left: 16px;">Risk Factors</th>
+          <th style="text-align: left; padding-left: 14px;">Mitigations</th>
+          <th style="text-align: center;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rk in risk_records %}
+        {% set rk_level = 'Low Risk' if (rk.risk_category == 'Low Risk' or (rk.overall_risk_score and rk.overall_risk_score <= 25)) else ('Medium Risk' if (rk.risk_category == 'Medium Risk' or (rk.overall_risk_score and rk.overall_risk_score <= 55)) else 'High Risk') %}
+        <tr class="risk-table-row" data-category="{{ rk_level }}" data-raw-category="{{ rk.risk_category or '' }}" data-request-id="{{ rk.req_id }}">
+          <td style="padding-left: 14px;">
+            <strong class="risk-supplier-name">{{ rk.supplier_name }}</strong>
+            <div class="risk-subtext">
+              <a href="{{ url_for('procurement.request_detail', request_id=rk.req_id) }}" style="font-weight: 600; color: var(--primary-blue);">
+                {{ rk.request_code }}
+              </a>
+              &middot; {{ rk.item_name }}
+            </div>
+            {% if rk.tier %}
+              <div class="risk-subtext">{{ rk.tier }}{% if rk.on_time_delivery_rate %} &middot; {{ rk.on_time_delivery_rate }}% On-time{% endif %}</div>
+            {% endif %}
+          </td>
+          <td style="text-align: center; vertical-align: middle;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              {% if rk.risk_category == 'Low Risk' or (rk.overall_risk_score and rk.overall_risk_score <= 25) %}
+                <span class="badge badge-risk-low">Low Risk</span>
+              {% elif rk.risk_category == 'Medium Risk' or (rk.overall_risk_score and rk.overall_risk_score <= 55) %}
+                <span class="badge badge-risk-medium">Medium Risk</span>
+              {% elif rk.risk_category == 'High Risk' or (rk.overall_risk_score and rk.overall_risk_score > 55) %}
+                <span class="badge badge-risk-high">High Risk</span>
+              {% elif 'Pending' in (rk.risk_category or '') or 'Insufficient' in (rk.risk_category or '') %}
+                <span class="badge badge-needs-review">Needs Review</span>
+              {% else %}
+                <span class="badge badge-needs-review">{{ rk.risk_category or 'Needs Review' }}</span>
+              {% endif %}
+              <span class="risk-subtext">Lead Time: <strong>{{ rk.delivery_risk or 'Standard' }}</strong></span>
+            </div>
+          </td>
+          <td style="text-align: center; vertical-align: middle;">
+            <div style="display: inline-flex; align-items: baseline; justify-content: center; font-size: 1.15rem; font-weight: 800; color: {% if rk.overall_risk_score <= 25 %}#166534{% elif rk.overall_risk_score <= 55 %}#92400E{% else %}#B91C1C{% endif %}; white-space: nowrap;">
+              {{ (rk.overall_risk_score|float)|round(0)|int }}<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-left: 2px;">/100</span>
+            </div>
+          </td>
+          <td style="text-align: center; vertical-align: middle; padding-left: 10px; padding-right: 10px;">
+            {% if rk.compliance_risk == 'Verified' or rk.compliance_risk == 'Low' or rk.compliance_risk == 'Compliant' %}
+              <span class="badge badge-risk-low">Compliant</span>
+            {% elif rk.compliance_risk == 'Non-Compliant' or rk.compliance_risk == 'High' or rk.compliance_risk == 'Breach' %}
+              <span class="badge badge-non-compliant">Non-Compliant</span>
+            {% elif rk.compliance_risk == 'Medium' %}
+              <span class="badge badge-risk-medium">Medium Risk</span>
+            {% else %}
+              <span class="badge badge-needs-review">{{ rk.compliance_risk or 'Needs Review' }}</span>
+            {% endif %}
+          </td>
+          <td class="risk-text-cell" style="vertical-align: middle; padding-left: 18px;">
+            {% set evidence_bullets = rk.supporting_evidence|clean_bullets(rk.supplier_name) %}
+            {% if evidence_bullets %}
+              <ul class="risk-clean-bullets">
+                {% for bullet in evidence_bullets[:2] %}
+                  <li><span class="risk-bullet-dot"></span> <span>{{ bullet }}</span></li>
+                {% endfor %}
+              </ul>
+              {% if evidence_bullets|length > 2 %}
+                <span class="risk-more-pill" title="{{ evidence_bullets[2:]|join(' | ') }}">+{{ evidence_bullets|length - 2 }} more</span>
+              {% endif %}
+            {% else %}
+              <span style="color: var(--text-muted); font-size: 0.8rem;">Standard terms verified</span>
+            {% endif %}
+          </td>
+          <td class="risk-text-cell" style="vertical-align: middle;">
+            {% set mitigation_bullets = rk.recommended_mitigation|clean_bullets(rk.supplier_name) %}
+            {% if mitigation_bullets %}
+              <ul class="risk-clean-bullets">
+                {% for bullet in mitigation_bullets[:2] %}
+                  <li><i class="bi bi-shield-check" style="color: var(--green-accent);"></i> <span>{{ bullet }}</span></li>
+                {% endfor %}
+              </ul>
+              {% if mitigation_bullets|length > 2 %}
+                <span class="risk-more-pill" title="{{ mitigation_bullets[2:]|join(' | ') }}">+{{ mitigation_bullets|length - 2 }} more</span>
+              {% endif %}
+            {% else %}
+              <span style="color: var(--text-muted); font-size: 0.8rem;">Standard purchase contract</span>
+            {% endif %}
+          </td>
+          <td class="action-col" style="text-align: center; vertical-align: middle;">
+            <a href="{{ url_for('risks.risk_detail', risk_id=rk.id) }}" class="btn btn-secondary btn-sm" id="btn-inspect-{{ rk.id }}">
+              Inspect
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">
+            <i class="bi bi-shield-check" style="font-size: 2rem; display: block; margin-bottom: 8px; color: var(--text-muted);"></i>
+            No risk assessment records found. Run the AI agent workflow on a request to generate risk evaluations.
+          </td>
+        </tr>
+        {% endfor %}
+        <tr id="riskNoMatchRow" style="display: none;">
+          <td colspan="7" style="text-align: center; padding: 48px; color: var(--text-secondary);">
+            <i class="bi bi-funnel" style="font-size: 2rem; display: block; margin-bottom: 8px; color: var(--text-muted);"></i>
+            No risk assessment records match the selected filter.
+            <div style="margin-top: 12px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="resetRiskFilters()">
+                <i class="bi bi-arrow-counterclockwise"></i> Clear Filters
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Stacked Risk Cards (< 768px) -->
+  <div class="risk-mobile-cards">
+    {% for rk in risk_records %}
+      {% set rk_level = 'Low Risk' if (rk.risk_category == 'Low Risk' or (rk.overall_risk_score and rk.overall_risk_score <= 25)) else ('Medium Risk' if (rk.risk_category == 'Medium Risk' or (rk.overall_risk_score and rk.overall_risk_score <= 55)) else 'High Risk') %}
+      <div class="risk-mobile-card risk-table-row" data-category="{{ rk_level }}" data-raw-category="{{ rk.risk_category or '' }}" data-request-id="{{ rk.req_id }}">
+        <div class="risk-mobile-header">
+          <div>
+            <strong class="risk-supplier-name">{{ rk.supplier_name }}</strong>
+            <div class="risk-subtext">{{ rk.tier or 'Standard' }}{% if rk.on_time_delivery_rate %} &middot; {{ rk.on_time_delivery_rate }}% On-time{% endif %}</div>
+          </div>
+          <a href="{{ url_for('risks.risk_detail', risk_id=rk.id) }}" class="btn btn-secondary btn-sm">
+            Inspect
+          </a>
+        </div>
+
+        <div style="font-size: 0.85rem;">
+          <a href="{{ url_for('procurement.request_detail', request_id=rk.req_id) }}" style="font-weight: 600; color: var(--primary-blue);">
+            {{ rk.request_code }}
+          </a>
+          <span style="color: var(--text-muted);">&middot; {{ rk.item_name }}</span>
+        </div>
+
+        <div class="risk-mobile-grid">
+          <div>
+            <span class="risk-mobile-section-label">Severity Score</span>
+            <div style="font-weight: 800; font-size: 1.1rem; color: {% if rk.overall_risk_score <= 25 %}#15803D{% elif rk.overall_risk_score <= 55 %}#92400E{% else %}#B91C1C{% endif %};">
+              {{ (rk.overall_risk_score|float)|round(1) }}/100
+            </div>
+          </div>
+          <div>
+            <span class="risk-mobile-section-label">Category</span>
+            <div>
+              {% if rk.risk_category == 'Low Risk' or (rk.overall_risk_score and rk.overall_risk_score <= 25) %}
+                <span class="badge badge-risk-low">Low Risk</span>
+              {% elif rk.risk_category == 'Medium Risk' or (rk.overall_risk_score and rk.overall_risk_score <= 55) %}
+                <span class="badge badge-risk-medium">Medium Risk</span>
+              {% elif rk.risk_category == 'High Risk' or (rk.overall_risk_score and rk.overall_risk_score > 55) %}
+                <span class="badge badge-risk-high">High Risk</span>
+              {% else %}
+                <span class="badge badge-needs-review">Needs Review</span>
+              {% endif %}
+            </div>
+          </div>
+          <div>
+            <span class="risk-mobile-section-label">Delivery Risk</span>
+            <div>
+              {% if rk.delivery_risk == 'Low' %}
+                <span class="badge badge-risk-low">Low Risk</span>
+              {% elif rk.delivery_risk == 'Medium' %}
+                <span class="badge badge-risk-medium">Medium Risk</span>
+              {% else %}
+                <span class="badge badge-risk-high">High Risk</span>
+              {% endif %}
+            </div>
+          </div>
+          <div>
+            <span class="risk-mobile-section-label">Compliance</span>
+            <div>
+              {% if rk.compliance_risk == 'Verified' or rk.compliance_risk == 'Low' or rk.compliance_risk == 'Compliant' %}
+                <span class="badge badge-risk-low">Compliant</span>
+              {% elif rk.compliance_risk == 'Non-Compliant' or rk.compliance_risk == 'High' %}
+                <span class="badge badge-non-compliant">Non-Compliant</span>
+              {% else %}
+                <span class="badge badge-needs-review">{{ rk.compliance_risk or 'Needs Review' }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="risk-mobile-section">
+          <span class="risk-mobile-section-label">Key Risk Factors</span>
+          {% set mob_evidence = rk.supporting_evidence|clean_bullets(rk.supplier_name) %}
+          {% if mob_evidence %}
+            <ul class="risk-clean-bullets">
+              {% for b in mob_evidence[:2] %}
+                <li><span class="risk-bullet-dot"></span> <span>{{ b }}</span></li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="risk-mobile-section-text">Standard requirements satisfied.</p>
+          {% endif %}
+        </div>
+
+        <div class="risk-mobile-section">
+          <span class="risk-mobile-section-label">Mitigation Action</span>
+          {% set mob_mitigation = rk.recommended_mitigation|clean_bullets(rk.supplier_name) %}
+          {% if mob_mitigation %}
+            <ul class="risk-clean-bullets">
+              {% for b in mob_mitigation[:2] %}
+                <li><i class="bi bi-shield-check" style="color: var(--green-accent);"></i> <span>{{ b }}</span></li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="risk-mobile-section-text">Standard PO execution terms.</p>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+        No risk assessment records found.
+      </div>
+    {% endfor %}
+    <div id="riskMobileNoMatchCard" class="card" style="display: none; text-align: center; padding: 40px; color: var(--text-secondary);">
+      <i class="bi bi-funnel" style="font-size: 2rem; display: block; margin-bottom: 8px; color: var(--text-muted);"></i>
+      No risk assessments match the selected filter.
+      <div style="margin-top: 12px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetRiskFilters()">
+          <i class="bi bi-arrow-counterclockwise"></i> Clear Filters
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('riskFilterForm');
+  const catSelect = document.getElementById('filterCategory');
+  const reqSelect = document.getElementById('filterRequest');
+  const resetBtn = document.getElementById('btnFilterReset');
+  const titleHeader = document.querySelector('.table-card-title');
+  const desktopRows = document.querySelectorAll('.risk-desktop-table tbody tr.risk-table-row');
+  const mobileCards = document.querySelectorAll('.risk-mobile-cards .risk-mobile-card');
+  const noMatchRow = document.getElementById('riskNoMatchRow');
+  const noMatchCard = document.getElementById('riskMobileNoMatchCard');
+
+  function applyFilter(pushHistory = true) {
+    const selectedCat = catSelect ? catSelect.value.trim().toLowerCase() : '';
+    const selectedReq = reqSelect ? reqSelect.value.trim() : '';
+
+    let visibleDesktop = 0;
+    desktopRows.forEach(row => {
+      const rowCat = (row.getAttribute('data-category') || '').toLowerCase();
+      const rawCat = (row.getAttribute('data-raw-category') || '').toLowerCase();
+      const rowReq = row.getAttribute('data-request-id') || '';
+
+      const matchCat = !selectedCat || (rowCat === selectedCat || rawCat === selectedCat);
+      const matchReq = !selectedReq || (rowReq === selectedReq);
+
+      if (matchCat && matchReq) {
+        row.style.display = '';
+        visibleDesktop++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    let visibleMobile = 0;
+    mobileCards.forEach(card => {
+      const cardCat = (card.getAttribute('data-category') || '').toLowerCase();
+      const rawCat = (card.getAttribute('data-raw-category') || '').toLowerCase();
+      const cardReq = card.getAttribute('data-request-id') || '';
+
+      const matchCat = !selectedCat || (cardCat === selectedCat || rawCat === selectedCat);
+      const matchReq = !selectedReq || (cardReq === selectedReq);
+
+      if (matchCat && matchReq) {
+        card.style.display = '';
+        visibleMobile++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    const totalVisible = desktopRows.length > 0 ? visibleDesktop : visibleMobile;
+    if (titleHeader) {
+      titleHeader.textContent = `Risk Assessment Log (${totalVisible})`;
+    }
+
+    if (noMatchRow) {
+      noMatchRow.style.display = (desktopRows.length > 0 && visibleDesktop === 0) ? '' : 'none';
+    }
+    if (noMatchCard) {
+      noMatchCard.style.display = (mobileCards.length > 0 && visibleMobile === 0) ? '' : 'none';
+    }
+
+    if (resetBtn) {
+      resetBtn.style.display = (selectedCat || selectedReq) ? 'inline-flex' : 'none';
+    }
+
+    if (pushHistory) {
+      const url = new URL(window.location);
+      if (selectedCat) url.searchParams.set('category', catSelect.value);
+      else url.searchParams.delete('category');
+      if (selectedReq) url.searchParams.set('request_id', selectedReq);
+      else url.searchParams.delete('request_id');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }
+
+  window.resetRiskFilters = function() {
+    if (catSelect) catSelect.value = '';
+    if (reqSelect) reqSelect.value = '';
+    applyFilter(true);
+  };
+
+  window.filterByCategory = function(categoryName) {
+    if (catSelect) {
+      catSelect.value = categoryName;
+      applyFilter(true);
+      const filterBar = document.getElementById('riskFilterForm');
+      if (filterBar) {
+        filterBar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  };
+
+  if (catSelect) catSelect.addEventListener('change', () => applyFilter(true));
+  if (reqSelect) reqSelect.addEventListener('change', () => applyFilter(true));
+
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault(); // Instant responsive filter without page reload
+      applyFilter(true);
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      resetRiskFilters();
+    });
+  }
+
+  // Initial filter run to sync with pre-selected dropdowns
+  applyFilter(false);
+});
+</script>
+{% endblock %}

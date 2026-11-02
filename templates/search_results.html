@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results for "{{ query }}" — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Search Results</h1>
+  <p style="color: var(--text-secondary); font-size: 0.92rem;">
+    Matching results for: <strong>"{{ query }}"</strong>
+  </p>
+</div>
+
+<!-- Procurement Requests Matches -->
+<div class="data-table-card" style="margin-bottom: 28px;">
+  <div class="table-card-header">
+    <h3 class="table-card-title">Matching Procurement Requests ({{ requests|length }})</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Request Code</th>
+          <th>Item / Scope</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in requests %}
+        <tr>
+          <td><strong>{{ r.request_code }}</strong></td>
+          <td>{{ r.item_name }}</td>
+          <td>{{ r.category }}</td>
+          <td><span class="badge badge-blue">{{ r.status }}</span></td>
+          <td style="text-align: right;">
+            <a href="{{ url_for('procurement.request_detail', request_id=r.id) }}" class="btn btn-secondary btn-sm">
+              View Request
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+            No procurement requests matched your query.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Suppliers Matches -->
+<div class="data-table-card">
+  <div class="table-card-header">
+    <h3 class="table-card-title">Matching Suppliers in Registry ({{ suppliers|length }})</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Supplier Name</th>
+          <th>Code</th>
+          <th>Category</th>
+          <th>Tier</th>
+          <th>Rating</th>
+          <th>Compliance</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in suppliers %}
+        <tr>
+          <td><strong>{{ s.name }}</strong></td>
+          <td><code>{{ s.code }}</code></td>
+          <td>{{ s.category }}</td>
+          <td><span class="badge badge-blue">{{ s.tier }}</span></td>
+          <td><strong style="color: var(--orange-accent);"><i class="bi bi-star-fill"></i> {{ s.rating }}</strong></td>
+          <td><span class="badge {% if s.compliance_status == 'Verified' %}badge-risk-low{% elif s.compliance_status == 'High Risk' %}badge-risk-high{% else %}badge-risk-medium{% endif %}">{{ s.compliance_status }}</span></td>
+          <td style="text-align: right;">
+            <a href="{{ url_for('suppliers.supplier_detail', supplier_id=s.id) }}" class="btn btn-secondary btn-sm">
+              View Profile
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+            No suppliers matched your query.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

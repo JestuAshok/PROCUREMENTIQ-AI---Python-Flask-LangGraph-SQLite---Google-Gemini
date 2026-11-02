@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PROCUREMENTIQ AI — Autonomous Procurement Risk & Negotiation Intelligence{% endblock %}</title>
+  <meta name="description" content="Enterprise multi-agent autonomous procurement intelligence platform for quotation extraction, total cost ownership analysis, and explainable vendor recommendations.">
+  
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap Icons CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Application Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- Backdrop for offcanvas sidebar drawer -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- Reusable Sidebar Navigation (Hidden by default, slides out when toggled) -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+      <a href="{{ url_for('dashboard.dashboard_view') }}" class="brand-logo">
+        <div class="logo-swirl"></div>
+        <div class="brand-text">
+          <span class="brand-title">PROCUREMENT<span>IQ</span> <span class="badge-ai-pill">AI</span></span>
+          <span class="brand-tagline">Risk & Negotiation</span>
+        </div>
+      </a>
+      <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close Sidebar" title="Hide Sidebar">
+        <i class="bi bi-x-lg" style="pointer-events: none;"></i>
+      </button>
+    </div>
+
+    <ul class="sidebar-menu">
+      <li class="sidebar-item {% if request.endpoint == 'dashboard.dashboard_view' %}active{% endif %}">
+        <a href="{{ url_for('dashboard.dashboard_view') }}" id="nav-dashboard">
+          <i class="bi bi-grid-1x2"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="sidebar-item {% if request.endpoint == 'procurement.new_request' %}active{% endif %}">
+        <a href="{{ url_for('procurement.new_request') }}" id="nav-new-request">
+          <i class="bi bi-plus-circle"></i>
+          <span>New Request</span>
+        </a>
+      </li>
+      <li class="sidebar-item {% if request.endpoint == 'analysis.review_quotations' %}active{% endif %}">
+        <a href="{{ url_for('analysis.review_quotations', request_id=1) }}" id="nav-quote-analysis">
+          <i class="bi bi-file-earmark-spreadsheet"></i>
+          <span>Quotation Analysis</span>
+        </a>
+      </li>
+      <li class="sidebar-item {% if request.endpoint in ('suppliers.list_suppliers', 'suppliers.supplier_detail', 'suppliers.add_supplier') %}active{% endif %}">
+        <a href="{{ url_for('suppliers.list_suppliers') }}" id="nav-suppliers">
+          <i class="bi bi-people"></i>
+          <span>Supplier Research</span>
+        </a>
+      </li>
+      <li class="sidebar-item {% if request.endpoint in ('risks.list_risks', 'risks.risk_detail') %}active{% endif %}">
+        <a href="{{ url_for('risks.list_risks') }}" id="nav-risks">
+          <i class="bi bi-shield-check"></i>
+          <span>Risk Assessment</span>
+        </a>
+      </li>
+      <li class="sidebar-item {% if request.endpoint == 'costs.cost_optimization' %}active{% endif %}">
+        <a href="{{ url_for('costs.cost_optimization') }}" id="nav-cost-opt">
+          <i class="bi bi-currency-dollar"></i>
+          <span>Cost Optimization</span>
+        </a>
+      </li>
+      <li class="sidebar-item {% if request.endpoint == 'recommendations.view_recommendations' %}active{% endif %}">
+        <a href="{{ url_for('recommendations.view_recommendations') }}" id="nav-recommendations">
+          <i class="bi bi-award"></i>
+          <span>Vendor Recommendations</span>
+        </a>
+      </li>
+      <li class="sidebar-item {% if request.endpoint == 'reports.list_reports' %}active{% endif %}">
+        <a href="{{ url_for('reports.list_reports') }}" id="nav-reports">
+          <i class="bi bi-file-earmark-pdf"></i>
+          <span>Contracts & Reports</span>
+        </a>
+      </li>
+      <li class="sidebar-item {% if request.endpoint == 'workflow.view_workflow' %}active{% endif %}">
+        <a href="{{ url_for('workflow.view_workflow', request_id=1) }}" id="nav-workflow">
+          <i class="bi bi-cpu"></i>
+          <span>AI Agent Workflow</span>
+        </a>
+      </li>
+
+      <div class="sidebar-divider"></div>
+
+      <li class="sidebar-item {% if request.endpoint == 'settings.settings_view' %}active{% endif %}">
+        <a href="{{ url_for('settings.settings_view') }}" id="nav-settings">
+          <i class="bi bi-gear"></i>
+          <span>Settings</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#helpModal" onclick="alert('PROCUREMENTIQ AI Help & Support\n- Documentation: Built-in 6 AI agents & PDF/CSV reporting.\n- Demo Mode: Enabled by default, runs 100% locally.\n- Sample Files: Stored in sample_documents/ folder.')" id="nav-help">
+          <i class="bi bi-question-circle"></i>
+          <span>Help</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('auth.logout') }}" id="nav-logout" class="text-danger">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Bottom Promo AI Robot Card matching screenshot -->
+    <div class="sidebar-promo-card">
+      <img src="{{ url_for('static', filename='images/ai_robot.jpg') }}" alt="AI Robot" class="sidebar-robot-img">
+      <div class="sidebar-promo-text">
+        <h5>Smarter Procurement</h5>
+        <p>Safer Business &middot; Greater Value</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <!-- Topbar Header -->
+    <header class="topbar">
+      <!-- Sidebar Drawer Toggle (Always visible on all screens) -->
+      <button type="button" class="sidebar-toggle-btn" id="sidebarToggle" title="Toggle Navigation Menu" aria-label="Toggle Navigation Menu">
+        <i class="bi bi-list" style="pointer-events: none;"></i>
+      </button>
+
+      <!-- Global Search Form -->
+      <form action="{{ url_for('dashboard.search') }}" method="GET" class="topbar-search-form">
+        <i class="bi bi-search topbar-search-icon"></i>
+        <input type="text" name="q" class="topbar-search-input" placeholder="Search suppliers, requests, or documents..." value="{{ request.args.get('q', '') }}">
+      </form>
+
+      <!-- Topbar Actions -->
+      <div class="topbar-actions">
+        <!-- Notification Indicator with Badge -->
+        <button class="notification-bell-btn" title="1 unread procurement alert">
+          <i class="bi bi-bell"></i>
+          <span class="notification-indicator-dot"></span>
+        </button>
+
+
+        <!-- User Profile Pill -->
+        <a href="{{ url_for('settings.settings_view') }}" class="user-profile-pill">
+          <div class="user-avatar">
+            {{ session.get('user_name', 'J')[0] }}
+          </div>
+          <div class="user-info">
+            <span class="user-name">{{ session.get('user_name', 'Jahnavi') }}</span>
+            <span class="user-role">{{ session.get('user_role', 'Procurement Team') }}</span>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <!-- Flash Alerts (Suppresses duplicate welcome message on dashboard where hero greets the user) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-container">
+          {% for category, message in messages %}
+            {% if not (request.endpoint == 'dashboard.dashboard_view' and 'Welcome' in message) %}
+              <div class="alert alert-{{ category }}">
+                <div class="alert-content">
+                  <i class="bi bi-info-circle-fill"></i>
+                  <span>{{ message }}</span>
+                </div>
+                <button type="button" class="alert-close" aria-label="Close">&times;</button>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Page Content Body -->
+    <main class="content-body">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Core JavaScript -->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

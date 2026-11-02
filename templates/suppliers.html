@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Supplier Research — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Supplier Research & Registry</h1>
+    <p style="color: var(--text-secondary); font-size: 0.92rem;">
+      Verified database of approved enterprise suppliers, performance history, ratings, and audit ratings.
+    </p>
+  </div>
+  <a href="{{ url_for('suppliers.add_supplier') }}" class="btn btn-primary" id="btn-add-supplier">
+    <i class="bi bi-plus-lg"></i>
+    <span>Add Supplier</span>
+  </a>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card" style="padding: 18px 24px; margin-bottom: 24px;">
+  <form action="{{ url_for('suppliers.list_suppliers') }}" method="GET" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+    <div style="flex: 1; min-width: 240px; position: relative;">
+      <i class="bi bi-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+      <input type="text" name="q" class="form-control" style="padding-left: 38px;" placeholder="Search by supplier name, code, or country..." value="{{ search_q }}">
+    </div>
+
+    <div style="width: 200px;">
+      <select name="category" class="form-select">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+          <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="width: 160px;">
+      <select name="tier" class="form-select">
+        <option value="">All Tiers</option>
+        <option value="Tier 1" {% if tier_filter == 'Tier 1' %}selected{% endif %}>Tier 1</option>
+        <option value="Tier 2" {% if tier_filter == 'Tier 2' %}selected{% endif %}>Tier 2</option>
+        <option value="Tier 3" {% if tier_filter == 'Tier 3' %}selected{% endif %}>Tier 3</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-secondary btn-sm" style="padding: 10px 18px;">
+      <i class="bi bi-funnel"></i> Filter
+    </button>
+    {% if search_q or category_filter or tier_filter %}
+      <a href="{{ url_for('suppliers.list_suppliers') }}" class="btn btn-outline btn-sm">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Supplier Cards Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+  {% for s in suppliers %}
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--dark-navy);">{{ s.name }}</h3>
+            {% if s.is_demo %}
+              <span class="badge badge-muted" style="font-size: 0.65rem;" title="Pre-seeded enterprise benchmark record">Verified DB</span>
+            {% endif %}
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">
+            <code>{{ s.code or 'SUP-N/A' }}</code> &middot; {{ s.country }} &middot; {{ s.category }}
+          </span>
+        </div>
+        <span class="badge {% if s.tier == 'Tier 1' %}badge-blue{% elif s.tier == 'Tier 2' %}badge-lavender{% else %}badge-muted{% endif %}">
+          {{ s.tier }}
+        </span>
+      </div>
+
+      <!-- Metrics Row -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background-color: var(--bg-primary); border-radius: var(--radius-md); padding: 12px; margin-bottom: 14px; text-align: center;">
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Rating</span>
+          <strong style="color: var(--orange-accent); font-size: 0.95rem;">
+            <i class="bi bi-star-fill" style="font-size: 0.8rem;"></i> {{ s.rating }}/5.0
+          </strong>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">On-Time Delivery</span>
+          <strong style="color: var(--green-accent); font-size: 0.95rem;">{{ s.on_time_delivery_rate }}%</strong>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Defect Rate</span>
+          <strong style="color: {% if s.defect_rate > 3.0 %}var(--danger){% else %}var(--dark-navy){% endif %}; font-size: 0.95rem;">{{ s.defect_rate }}%</strong>
+        </div>
+      </div>
+
+      <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 14px;">
+        {{ s.notes or 'Standard pre-approved supplier in corporate purchasing catalog.' }}
+      </p>
+    </div>
+
+    <div style="border-top: 1px solid var(--border-subtle); padding-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+      <span class="badge {% if s.compliance_status == 'Verified' %}badge-risk-low{% elif s.compliance_status == 'High Risk' %}badge-risk-high{% else %}badge-risk-medium{% endif %}">
+        <i class="bi {% if s.compliance_status == 'Verified' %}bi-shield-check{% else %}bi-exclamation-triangle{% endif %}"></i>
+        {{ s.compliance_status }}
+      </span>
+      <a href="{{ url_for('suppliers.supplier_detail', supplier_id=s.id) }}" class="btn btn-secondary btn-sm" id="btn-supplier-{{ s.id }}">
+        <span>Profile & History</span>
+        <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px;">
+    <p style="color: var(--text-secondary);">No suppliers matched the search criteria.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

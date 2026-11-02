@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Cost Optimization — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Total Ownership Cost Optimization</h1>
+    <p style="color: var(--text-secondary); font-size: 0.92rem;">
+      Transparent line-item landed cost calculations separating arithmetic from qualitative risk and warranty.
+    </p>
+  </div>
+
+  <!-- Request Selector Dropdown -->
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <label style="font-size: 0.88rem; font-weight: 600; color: var(--dark-navy);">Request:</label>
+    <select class="form-select" style="width: 260px;" onchange="window.location.href='/cost-optimization/' + this.value">
+      {% for r in available_requests %}
+        <option value="{{ r.id }}" {% if selected_request_id == r.id %}selected{% endif %}>
+          {{ r.request_code }} — {{ r.item_name }} ({{ r.quote_count }} quotes)
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+{% if selected_request %}
+<!-- Top Metrics Row -->
+<div class="kpi-cards-grid" style="margin-bottom: 24px;">
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper mint">
+      <i class="bi bi-tag"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">${{ "{:,.2f}".format(lowest_cost) }}</span>
+      <span class="kpi-label">Lowest Landed Total</span>
+      <span class="kpi-subtext" style="color: var(--green-accent);">Offered by {{ cheapest_supplier }}</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper blue">
+      <i class="bi bi-wallet2"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">${{ "{:,.2f}".format(selected_request.budget) }}</span>
+      <span class="kpi-label">Approved Budget Cap</span>
+      <span class="kpi-subtext">
+        {% if selected_request.budget >= lowest_cost %}
+          <span style="color: var(--green-accent);"><i class="bi bi-check-lg"></i> ${{ "{:,.2f}".format(selected_request.budget - lowest_cost) }} under budget</span>
+        {% else %}
+          <span style="color: var(--danger);"><i class="bi bi-exclamation-triangle"></i> Exceeds budget</span>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper orange">
+      <i class="bi bi-arrows-expand"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">${{ "{:,.2f}".format(highest_cost - lowest_cost) }}</span>
+      <span class="kpi-label">Price Spread</span>
+      <span class="kpi-subtext">Spread across submitted bids</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper purple">
+      <i class="bi bi-award"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ cost_rows|length }}</span>
+      <span class="kpi-label">Quotations Evaluated</span>
+      <span class="kpi-subtext"><a href="{{ url_for('recommendations.view_recommendations', request_id=selected_request_id) }}">View Advice &rarr;</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- Stacked Cost Breakdown Chart Card -->
+<div class="card" style="margin-bottom: 28px;">
+  <div class="table-card-header">
+    <div>
+      <h3 class="chart-card-title">Total Landed Cost Composition Breakdown</h3>
+      <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">
+        Visualizing Net Subtotal, Shipping Freight, Regional Taxes, and Installation / Testing Charges
+      </p>
+    </div>
+  </div>
+  <div style="height: 280px; position: relative;">
+    <canvas id="costStackedChart"></canvas>
+  </div>
+</div>
+
+<!-- Detailed Line-Item Cost Table -->
+<div class="data-table-card">
+  <div class="table-card-header">
+    <h3 class="table-card-title">Line-Item Landed Cost Breakdown</h3>
+  </div>
+
+  <div class="table-responsive">
+    <table class="custom-table cost-breakdown-table">
+      <thead>
+        <tr>
+          <th style="min-width: 180px; text-align: left;">Supplier</th>
+          <th style="min-width: 105px; text-align: right;">Unit Price</th>
+          <th style="min-width: 55px; text-align: center;">Qty</th>
+          <th style="min-width: 115px; text-align: right;">Net Subtotal</th>
+          <th style="min-width: 90px; text-align: right;">Taxes</th>
+          <th style="min-width: 95px; text-align: right;">Shipping</th>
+          <th style="min-width: 105px; text-align: right;">Installation</th>
+          <th style="min-width: 130px; text-align: right;">Total Cost</th>
+          <th style="min-width: 85px; text-align: center;">Delivery</th>
+          <th style="min-width: 85px; text-align: center;">Warranty</th>
+          <th style="min-width: 90px; text-align: center;">Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cost_rows %}
+        <tr style="{% if c.is_lowest_cost %}background-color: rgba(32, 167, 122, 0.04);{% endif %}">
+          <td style="white-space: nowrap; font-weight: 600;">
+            {{ c.supplier_name }}
+            {% if c.is_lowest_cost %}
+              <span class="badge badge-green" style="font-size: 0.68rem; margin-left: 6px; vertical-align: middle;">Lowest Price</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ c.currency }} {{ "{:,.2f}".format(c.unit_price) }}</td>
+          <td style="text-align: center; white-space: nowrap;">{{ c.quantity }}</td>
+          <td style="text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ c.currency }} {{ "{:,.2f}".format(c.net_subtotal) }}</td>
+          <td style="text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ c.currency }} {{ "{:,.2f}".format(c.tax_amount) }}</td>
+          <td style="text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ c.currency }} {{ "{:,.2f}".format(c.shipping_cost) }}</td>
+          <td style="text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ c.currency }} {{ "{:,.2f}".format(c.installation_cost + c.other_charges) }}</td>
+          <td style="text-align: right; white-space: nowrap;">
+            <strong style="color: {% if c.is_lowest_cost %}var(--green-accent){% else %}var(--primary-blue){% endif %}; font-size: 1.05rem; font-variant-numeric: tabular-nums;">
+              {{ c.currency }} {{ "{:,.2f}".format(c.estimated_total_cost) }}
+            </strong>
+          </td>
+          <td style="text-align: center; white-space: nowrap;">{{ c.delivery_days }} days</td>
+          <td style="text-align: center; white-space: nowrap;">{{ c.warranty_months }} mo</td>
+          <td style="text-align: center; white-space: nowrap;">
+            <span class="badge {% if c.risk_category == 'Low Risk' %}badge-green{% elif c.risk_category == 'Medium Risk' %}badge-orange{% else %}badge-danger{% endif %}">
+              {{ c.risk_score|round(0)|int }}/100
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="11" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            No cost comparisons recorded yet. Run the 6-agent workflow to compute landed costs.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Transparent Arithmetic Disclosure Card -->
+<div class="card" style="background: linear-gradient(135deg, #F8FAFF 0%, #FFFFFF 100%); padding: 24px;">
+  <h4 style="font-size: 1rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 8px;">
+    <i class="bi bi-calculator text-primary"></i> Deterministic Formula & Audit Trail
+  </h4>
+  <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+    <code>Subtotal = Unit Price &times; Quantity</code> &middot; 
+    <code>Net Subtotal = Subtotal - Discount</code> &middot; 
+    <code>Estimated Total Cost = Net Subtotal + Applicable Taxes + Shipping + Installation + Other Documented Charges</code>
+  </p>
+  <div style="font-size: 0.82rem; color: var(--text-secondary);">
+    {% for c in cost_rows %}
+      <div style="margin-bottom: 6px;">
+        <strong>{{ c.supplier_name }}:</strong> <code>{{ c.formulas_used }}</code>
+        {% if c.missing_cost_warnings and c.missing_cost_warnings != 'None. Complete transparent breakdown verified.' %}
+          <span style="color: var(--orange-accent); display: block; margin-top: 2px;">
+            <i class="bi bi-info-circle"></i> {{ c.missing_cost_warnings }}
+          </span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const chartCanvas = document.getElementById('costStackedChart');
+  if (chartCanvas) {
+    new Chart(chartCanvas, {
+      type: 'bar',
+      data: {
+        labels: {{ chart_data.labels | tojson }},
+        datasets: [
+          {
+            label: 'Net Subtotal',
+            data: {{ chart_data.subtotals | tojson }},
+            backgroundColor: '#4F83FF'
+          },
+          {
+            label: 'Freight & Shipping',
+            data: {{ chart_data.shipping | tojson }},
+            backgroundColor: '#FF9866'
+          },
+          {
+            label: 'Applicable Taxes',
+            data: {{ chart_data.taxes | tojson }},
+            backgroundColor: '#9274F8'
+          },
+          {
+            label: 'Installation & Setup',
+            data: {{ chart_data.install | tojson }},
+            backgroundColor: '#20A77A'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            grid: { color: '#F1F4F9' },
+            ticks: {
+              callback: function(value) { return '$' + value.toLocaleString(); }
+            }
+          }
+        },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString();
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

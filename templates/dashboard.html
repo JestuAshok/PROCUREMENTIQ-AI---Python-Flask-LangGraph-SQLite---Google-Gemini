@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<!-- Dashboard Hero Banner (Balanced 2-Column Grid: Left 60%, Right 40%) -->
+<div class="dashboard-hero-banner">
+  <div class="dash-hero-content">
+    <div class="dash-hero-greeting">Welcome back, {{ user_name }}</div>
+    <h1 class="dash-hero-title">Smarter Procurement <br><span class="hero-title-accent">with AI Agents</span></h1>
+    <p class="dash-hero-desc">
+      Analyze quotations, assess risks, compare total costs and get explainable vendor recommendations — all in one platform.
+    </p>
+    <div class="dash-hero-actions">
+      <a href="{{ url_for('procurement.new_request') }}" class="btn btn-orange" id="btn-hero-new-request">
+        <i class="bi bi-plus-lg"></i>
+        <span>New Procurement Request</span>
+      </a>
+      <a href="{{ url_for('analysis.review_quotations', request_id=1) }}" class="btn btn-hero-outline" id="btn-hero-view-analysis">
+        <span>View Recent Analysis</span>
+        <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="dash-hero-visual">
+    <img src="{{ url_for('static', filename='images/hero_logistics.jpg') }}" alt="Procurement Logistics" class="dash-hero-img">
+  </div>
+</div>
+
+<!-- 4 KPI Metric Cards (Database-backed) -->
+<div class="kpi-cards-grid">
+  <!-- KPI 1 -->
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper blue">
+      <i class="bi bi-file-earmark-text"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ total_requests }}</span>
+      <span class="kpi-label">Procurement Requests</span>
+      {% if total_requests > 0 %}
+        <span class="kpi-subtext" style="color: var(--primary-blue);">Active in system</span>
+      {% else %}
+        <span class="kpi-subtext" style="color: var(--text-muted);">0 active</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- KPI 2 -->
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper orange">
+      <i class="bi bi-people"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ total_suppliers }}</span>
+      <span class="kpi-label">Suppliers Analyzed</span>
+      {% if total_suppliers > 0 %}
+        <span class="kpi-subtext" style="color: var(--orange-accent);">{{ total_suppliers }} in database</span>
+      {% else %}
+        <span class="kpi-subtext" style="color: var(--text-muted);">0 in database</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- KPI 3 -->
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper purple">
+      <i class="bi bi-currency-dollar"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ recs_ready }}</span>
+      <span class="kpi-label">Recommendations Ready</span>
+      {% if recs_ready > 0 %}
+        <span class="kpi-subtext"><a href="{{ url_for('recommendations.view_recommendations') }}">View now &rarr;</a></span>
+      {% else %}
+        <span class="kpi-subtext" style="color: var(--text-muted);">None pending</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- KPI 4 -->
+  <div class="kpi-card">
+    <div class="kpi-icon-wrapper mint">
+      <i class="bi bi-shield-exclamation"></i>
+    </div>
+    <div class="kpi-info-wrapper">
+      <span class="kpi-val">{{ high_risk_count }}</span>
+      <span class="kpi-label">High-Risk Suppliers</span>
+      {% if high_risk_count > 0 %}
+        <span class="kpi-subtext"><a href="{{ url_for('risks.list_risks', category='High Risk') }}" style="color: var(--danger);">Review &rarr;</a></span>
+      {% else %}
+        <span class="kpi-subtext" style="color: var(--green-accent);">0 flagged</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Middle Grid (Ongoing Procurement Analysis Table + Cost Comparison Chart) -->
+<div class="dashboard-middle-grid">
+  <!-- Ongoing Procurement Analysis Table -->
+  <div class="data-table-card">
+    <div class="table-card-header">
+      <h2 class="table-card-title">Ongoing Procurement Analysis</h2>
+      <a href="{{ url_for('procurement.new_request') }}" class="btn btn-outline btn-sm">
+        <span>View All</span>
+        <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Item / Equipment</th>
+            <th>Suppliers</th>
+            <th>Status</th>
+            <th>Last Updated</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in ongoing_requests %}
+          <tr>
+            <td><strong style="color: var(--dark-navy);">{{ req.request_code }}</strong></td>
+            <td>{{ req.item_name }}</td>
+            <td>{{ req.suppliers_count }}</td>
+            <td>
+              {% if req.status == 'Analysis In Progress' %}
+                <span class="badge badge-blue">{{ req.status }}</span>
+              {% elif req.status == 'Risk Assessment' %}
+                <span class="badge badge-orange">{{ req.status }}</span>
+              {% elif req.status == 'Recommendation Ready' %}
+                <span class="badge badge-green">{{ req.status }}</span>
+              {% elif req.status == 'Supplier Research' %}
+                <span class="badge badge-lavender">{{ req.status }}</span>
+              {% elif req.status == 'Completed' %}
+                <span class="badge badge-muted">{{ req.status }}</span>
+              {% else %}
+                <span class="badge badge-blue">{{ req.status }}</span>
+              {% endif %}
+            </td>
+            <td style="color: var(--text-secondary);">
+              {{ (req.updated_at|string)[:10] if req.updated_at else 'Recent' }}
+            </td>
+            <td style="text-align: right;">
+              <a href="{{ url_for('procurement.request_detail', request_id=req.id) }}" class="btn btn-secondary btn-sm" id="btn-view-req-{{ req.id }}">
+                View
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              No procurement requests created yet. 
+              <a href="{{ url_for('procurement.new_request') }}" class="btn btn-primary btn-sm" style="margin-left: 10px;">Create First Request</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cost Comparison Chart Card -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3 class="chart-card-title">Cost Comparison</h3>
+      <a href="{{ url_for('costs.cost_optimization') }}" class="btn btn-outline btn-sm">Compare</a>
+    </div>
+
+    {% if cost_chart_labels and cost_chart_labels|length > 0 %}
+      <div class="chart-wrapper">
+        <canvas id="costComparisonChart"></canvas>
+      </div>
+      <div class="chart-caption">
+        Total Cost ($k / Ten-Thousands)
+      </div>
+    {% else %}
+      <div class="chart-empty-state">
+        <i class="bi bi-bar-chart-line"></i>
+        <p>No Quotation Data Yet</p>
+        <small>Upload supplier quotations to see interactive cost breakdowns and benchmark comparisons.</small>
+        <a href="{{ url_for('procurement.new_request') }}" class="btn btn-outline btn-sm" style="margin-top: 14px;">
+          <i class="bi bi-plus-lg"></i> New Request
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Bottom Grid (Top Vendor + Risk Donut + AI Agent Workflow) -->
+<div class="dashboard-bottom-grid">
+  <!-- Widget 1: Top Vendor Recommendation -->
+  <div class="top-vendor-card">
+    <div class="table-card-header" style="margin-bottom: 12px;">
+      <h3 class="chart-card-title">Top Vendor Recommendation</h3>
+      <span class="badge badge-green"><i class="bi bi-star-fill"></i> AI Shortlist</span>
+    </div>
+
+    {% if top_recommendation %}
+      <div class="vendor-head">
+        <div class="vendor-avatar-letter">
+          {{ top_recommendation.supplier_name[0] }}
+        </div>
+        <div>
+          <div class="vendor-name-title">{{ top_recommendation.supplier_name }}</div>
+          <span class="badge badge-green" style="font-size: 0.72rem;">Recommended</span>
+        </div>
+      </div>
+
+      <ul class="vendor-checklist">
+        <li class="vendor-check-item">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>Best total cost of ownership</span>
+        </li>
+        <li class="vendor-check-item">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>Reliable delivery timeline</span>
+        </li>
+        <li class="vendor-check-item">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>Lower risk score (Verified Tier 1)</span>
+        </li>
+        <li class="vendor-check-item">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>Strong warranty and support terms</span>
+        </li>
+      </ul>
+
+      <a href="{{ url_for('recommendations.view_recommendations', request_id=top_recommendation.request_id) }}" class="btn btn-orange" style="width: 100%; margin-top: auto;">
+        <span>View Details</span>
+        <i class="bi bi-arrow-right"></i>
+      </a>
+    {% else %}
+      <div class="chart-empty-state" style="min-height: 220px;">
+        <i class="bi bi-award"></i>
+        <p>No Active Recommendations</p>
+        <small>Submit a procurement request and run the 6 AI agents to generate vendor recommendations.</small>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Widget 2: Risk Assessment Overview (Donut Chart with Center Text) -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3 class="chart-card-title">Risk Assessment Overview</h3>
+      <a href="{{ url_for('risks.list_risks') }}" class="btn btn-outline btn-sm">Details</a>
+    </div>
+
+    {% if total_suppliers > 0 %}
+      <div class="donut-chart-wrapper">
+        <canvas id="riskDonutChart"></canvas>
+        <div class="donut-center-text">
+          <span class="donut-center-num">{{ total_suppliers }}</span>
+          <span class="donut-center-label">Suppliers</span>
+        </div>
+      </div>
+
+      <div class="risk-legend-row">
+        <span class="risk-legend-item low"><i class="bi bi-circle-fill"></i> Low Risk ({{ risk_counts.low }})</span>
+        <span class="risk-legend-item medium"><i class="bi bi-circle-fill"></i> Medium ({{ risk_counts.medium }})</span>
+        <span class="risk-legend-item high"><i class="bi bi-circle-fill"></i> High ({{ risk_counts.high }})</span>
+      </div>
+    {% else %}
+      <div class="chart-empty-state" style="min-height: 220px;">
+        <i class="bi bi-shield-check"></i>
+        <p>0 Suppliers Flagged</p>
+        <small>Risk agent analyzes financial, operational, and delivery factors once suppliers submit bids.</small>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Widget 3: AI Agent Workflow (Compact 6-agent sequence matching screenshot) -->
+  <div class="agent-flow-card">
+    <div class="table-card-header" style="margin-bottom: 12px;">
+      <div>
+        <h3 class="chart-card-title">AI Agent Workflow</h3>
+      </div>
+      <a href="{{ url_for('workflow.view_workflow', request_id=1) }}" class="btn btn-outline btn-sm">
+        <span>View Details</span>
+        <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+
+    <div class="agent-flow-compact-steps">
+      <!-- Step 1 -->
+      <div class="flow-mini-step">
+        <div class="flow-mini-icon blue"><i class="bi bi-file-earmark-text"></i></div>
+        <span class="flow-mini-num">1. Parse</span>
+        <span class="flow-mini-title">Requirements</span>
+      </div>
+      <div class="flow-mini-arrow"><i class="bi bi-arrow-right"></i></div>
+
+      <!-- Step 2 -->
+      <div class="flow-mini-step">
+        <div class="flow-mini-icon purple"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+        <span class="flow-mini-num">2. Analyze</span>
+        <span class="flow-mini-title">Quotes</span>
+      </div>
+      <div class="flow-mini-arrow"><i class="bi bi-arrow-right"></i></div>
+
+      <!-- Step 3 -->
+      <div class="flow-mini-step">
+        <div class="flow-mini-icon mint"><i class="bi bi-building-check"></i></div>
+        <span class="flow-mini-num">3. Research</span>
+        <span class="flow-mini-title">Suppliers</span>
+      </div>
+      <div class="flow-mini-arrow"><i class="bi bi-arrow-right"></i></div>
+
+      <!-- Step 4 -->
+      <div class="flow-mini-step">
+        <div class="flow-mini-icon orange"><i class="bi bi-shield-exclamation"></i></div>
+        <span class="flow-mini-num">4. Assess</span>
+        <span class="flow-mini-title">Risks</span>
+      </div>
+      <div class="flow-mini-arrow"><i class="bi bi-arrow-right"></i></div>
+
+      <!-- Step 5 -->
+      <div class="flow-mini-step">
+        <div class="flow-mini-icon sky"><i class="bi bi-cash-coin"></i></div>
+        <span class="flow-mini-num">5. Optimize</span>
+        <span class="flow-mini-title">Cost</span>
+      </div>
+      <div class="flow-mini-arrow"><i class="bi bi-arrow-right"></i></div>
+
+      <!-- Step 6 -->
+      <div class="flow-mini-step">
+        <div class="flow-mini-icon pink"><i class="bi bi-award"></i></div>
+        <span class="flow-mini-num">6. Recommend</span>
+        <span class="flow-mini-title">Vendors</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Cost Comparison Bar Chart
+  const costLabels = {{ cost_chart_labels | tojson }};
+  const costValues = {{ cost_chart_values | tojson }};
+  const costCtx = document.getElementById('costComparisonChart');
+  if (costCtx && costLabels && costLabels.length > 0) {
+    new Chart(costCtx, {
+      type: 'bar',
+      data: {
+        labels: costLabels,
+        datasets: [{
+          label: 'Total Cost ($k)',
+          data: costValues,
+          backgroundColor: [
+            'rgba(79, 131, 255, 0.75)',
+            'rgba(255, 152, 102, 0.75)',
+            'rgba(146, 116, 248, 0.75)'
+          ],
+          borderColor: [
+            '#4F83FF',
+            '#FF9866',
+            '#9274F8'
+          ],
+          borderWidth: 1.5,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return '$' + (context.parsed.y * 10).toLocaleString() + ' landed cost';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: '#F1F4F9' },
+            ticks: {
+              callback: function(val) { return val + 'k'; },
+              font: { size: 10 }
+            }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11, weight: '600' } }
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Risk Assessment Overview Donut Chart
+  const riskCtx = document.getElementById('riskDonutChart');
+  const totalSuppliers = {{ total_suppliers }};
+  if (riskCtx && totalSuppliers > 0) {
+    new Chart(riskCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+        datasets: [{
+          data: [{{ risk_counts.low }}, {{ risk_counts.medium }}, {{ risk_counts.high }}],
+          backgroundColor: [
+            '#20A77A',
+            '#FF9866',
+            '#F87171'
+          ],
+          borderWidth: 3,
+          borderColor: '#FFFFFF'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}New Procurement Request — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Create Procurement Request</h1>
+      <p style="color: var(--text-secondary); font-size: 0.92rem;">
+        Define mandatory criteria and procurement specifications for AI multi-supplier evaluation.
+      </p>
+    </div>
+    <span class="badge badge-blue" style="font-size: 0.9rem; padding: 6px 14px;">
+      <i class="bi bi-hash"></i> {{ generated_code }}
+    </span>
+  </div>
+
+  <div class="card" style="padding: 32px;">
+    <form action="{{ url_for('procurement.new_request') }}" method="POST">
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="item_name">Item or Equipment Name *</label>
+          <input type="text" id="item_name" name="item_name" class="form-control" placeholder="e.g. Industrial Step-Down Transformers 500kVA" value="{{ item_name or '' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="category">Product Category *</label>
+          <select id="category" name="category" class="form-select" required>
+            <option value="">Select Category...</option>
+            <option value="Electrical Equipment" {% if category == 'Electrical Equipment' %}selected{% endif %}>Electrical Equipment</option>
+            <option value="Information Technology" {% if category == 'Information Technology' %}selected{% endif %}>Information Technology</option>
+            <option value="Facilities & Climate" {% if category == 'Facilities & Climate' %}selected{% endif %}>Facilities & Climate (HVAC)</option>
+            <option value="General Supplies" {% if category == 'General Supplies' %}selected{% endif %}>General Supplies & Furniture</option>
+            <option value="Security & Surveillance" {% if category == 'Security & Surveillance' %}selected{% endif %}>Security & Surveillance</option>
+            <option value="Industrial Machinery" {% if category == 'Industrial Machinery' %}selected{% endif %}>Industrial Machinery</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="quantity">Quantity Required *</label>
+          <input type="number" id="quantity" name="quantity" class="form-control" min="1" placeholder="5" value="{{ quantity or '5' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="budget">Maximum Budget Ceiling *</label>
+          <div class="input-icon-wrapper">
+            <i class="bi bi-currency-dollar input-icon"></i>
+            <input type="number" id="budget" name="budget" step="0.01" min="1" class="form-control" placeholder="100000" value="{{ budget or '100000' }}" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="currency">Currency</label>
+          <select id="currency" name="currency" class="form-select">
+            <option value="USD" {% if currency == 'USD' %}selected{% endif %}>USD ($)</option>
+            <option value="EUR" {% if currency == 'EUR' %}selected{% endif %}>EUR (€)</option>
+            <option value="GBP" {% if currency == 'GBP' %}selected{% endif %}>GBP (£)</option>
+            <option value="INR" {% if currency == 'INR' %}selected{% endif %}>INR (₹)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="required_delivery_date">Required Delivery Deadline *</label>
+          <input type="date" id="required_delivery_date" name="required_delivery_date" class="form-control" value="{{ required_delivery_date or '2026-11-20' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="delivery_location">Delivery Destination / Facility *</label>
+          <input type="text" id="delivery_location" name="delivery_location" class="form-control" placeholder="e.g. Chicago Hub Warehouse, Dock #4" value="{{ delivery_location or 'Chicago Hub Warehouse' }}" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="min_warranty_months">Minimum Mandatory Warranty (Months) *</label>
+          <input type="number" id="min_warranty_months" name="min_warranty_months" class="form-control" min="0" placeholder="24" value="{{ min_warranty_months or '24' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="payment_terms_pref">Preferred Payment Terms</label>
+          <select id="payment_terms_pref" name="payment_terms_pref" class="form-select">
+            <option value="Net 30" {% if payment_terms_pref == 'Net 30' %}selected{% endif %}>Net 30 Days</option>
+            <option value="Net 45" {% if payment_terms_pref == 'Net 45' %}selected{% endif %}>Net 45 Days</option>
+            <option value="Net 60" {% if payment_terms_pref == 'Net 60' %}selected{% endif %}>Net 60 Days</option>
+            <option value="2/10 Net 30" {% if payment_terms_pref == '2/10 Net 30' %}selected{% endif %}>2/10 Net 30 (2% Early Pay Discount)</option>
+            <option value="Letter of Credit" {% if payment_terms_pref == 'Letter of Credit' %}selected{% endif %}>Letter of Credit (LC)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="additional_requirements">Additional Compliance & Technical Specifications</label>
+        <textarea id="additional_requirements" name="additional_requirements" class="form-control" placeholder="Specify technical certifications (e.g. UL 1562, ISO 9001), packaging constraints, freight insurance, or inspection testing...">{{ additional_requirements or 'UL 1562 and IEEE C57 compliant, copper windings, include freight and on-site testing' }}</textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 14px; margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+        <a href="{{ url_for('dashboard.dashboard_view') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-orange" id="btn-submit-new-request">
+          <i class="bi bi-check-lg"></i>
+          <span>Save Request & Upload Quotations</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

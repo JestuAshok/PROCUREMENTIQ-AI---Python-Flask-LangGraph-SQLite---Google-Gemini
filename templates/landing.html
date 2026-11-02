@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROCUREMENTIQ AI — Autonomous Procurement Risk & Negotiation Intelligence</title>
+  <meta name="description" content="Analyze quotations, assess risks, compare total costs and get explainable vendor recommendations — all in one platform.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- Sticky Public Header -->
+<header class="landing-header">
+  <div class="container landing-nav">
+    <a href="{{ url_for('dashboard.landing') }}" class="brand-logo" id="landing-brand">
+      <div class="logo-swirl"></div>
+      <div class="brand-text">
+        <span class="brand-title">PROCUREMENT<span>IQ</span> AI</span>
+        <span class="brand-tagline">Autonomous Procurement Risk & Negotiation Intelligence</span>
+      </div>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#agents">Agents</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+
+    <div class="nav-auth-actions">
+      {% if is_logged_in %}
+        <a href="{{ url_for('dashboard.dashboard_view') }}" class="btn btn-primary" id="btn-goto-dash">Open Dashboard</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline" id="btn-landing-login">Sign In</a>
+        <a href="{{ url_for('auth.signup') }}" class="btn btn-primary" id="btn-landing-getstarted">Get Started</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<!-- Hero Section matching UI Screenshot Strictly -->
+<section class="landing-hero" id="home">
+  <div class="container">
+    <div class="hero-grid">
+      <!-- Left Hero Text -->
+      <div class="hero-content">
+        <h1 class="hero-title">
+          Smarter Procurement <br>
+          <span class="highlight-orange">with AI Agents</span>
+        </h1>
+        <p class="hero-description">
+          Analyze supplier quotations, assess procurement risks, compare total ownership costs, and receive explainable vendor recommendations — all in one intelligent platform.
+        </p>
+        <div class="hero-actions">
+          <a href="{{ url_for('auth.signup') }}" class="btn btn-primary btn-lg" id="btn-hero-cta">
+            <span>Get Started</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+          <a href="#how-it-works" class="btn-watch-demo">
+            <span class="play-icon-circle">
+              <i class="bi bi-play-fill"></i>
+            </span>
+            <span>Watch Demo</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Right 3D Logistics Visual with Floating Glass Badges -->
+      <div class="hero-visual-wrapper">
+        <div class="hero-image-card">
+          <img src="{{ url_for('static', filename='images/hero_logistics.jpg') }}" alt="Global Logistics 3D Illustration">
+          
+          <!-- Floating Badge 1: Compare Quotes -->
+          <div class="floating-badge badge-compare">
+            <span class="badge-icon red"><i class="bi bi-tag-fill"></i></span>
+            <span>Compare Quotes</span>
+          </div>
+
+          <!-- Floating Badge 2: Assess Risks -->
+          <div class="floating-badge badge-risks">
+            <span class="badge-icon green"><i class="bi bi-shield-check"></i></span>
+            <span>Assess Risks</span>
+          </div>
+
+          <!-- Floating Badge 3: Optimize Costs -->
+          <div class="floating-badge badge-optimize">
+            <span class="badge-icon cyan"><i class="bi bi-piggy-bank-fill"></i></span>
+            <span>Optimize Costs</span>
+          </div>
+
+          <!-- Floating Badge 4: Recommend Vendors -->
+          <div class="floating-badge badge-recommend">
+            <span class="badge-icon purple"><i class="bi bi-award-fill"></i></span>
+            <span>Recommend Vendors</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 Feature Cards Below Hero (Identical to UI reference) -->
+    <div class="feature-cards-grid" id="features">
+      <div class="feature-pill-card">
+        <div class="feature-icon-circle mint">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <h3 class="feature-card-title">Lower Procurement Risk</h3>
+        <p class="feature-card-desc">Identify and mitigate supplier risks early before PO issuance.</p>
+      </div>
+
+      <div class="feature-pill-card">
+        <div class="feature-icon-circle lavender">
+          <i class="bi bi-currency-dollar"></i>
+        </div>
+        <h3 class="feature-card-title">Optimized Total Cost</h3>
+        <p class="feature-card-desc">Consider unit price, shipping, taxes, installation, warranty, and more.</p>
+      </div>
+
+      <div class="feature-pill-card">
+        <div class="feature-icon-circle blue">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <h3 class="feature-card-title">Trusted Suppliers</h3>
+        <p class="feature-card-desc">Data from reliable sources with verified ratings and delivery benchmarks.</p>
+      </div>
+
+      <div class="feature-pill-card">
+        <div class="feature-icon-circle slate">
+          <i class="bi bi-patch-check-fill"></i>
+        </div>
+        <h3 class="feature-card-title">Explainable Recommendations</h3>
+        <p class="feature-card-desc">Every decision backed by traceable arithmetic and qualitative evidence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="section-padding" id="how-it-works" style="background-color: #FFFFFF;">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">End-to-End Workflow</span>
+      <h2 class="section-title">How PROCUREMENTIQ AI Works</h2>
+      <p class="section-subtitle">A seamless, auditable 5-step process designed for high-value enterprise procurement teams.</p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3 class="step-title">Create Request</h3>
+        <p class="step-desc">Specify equipment name, quantity, budget ceiling, delivery location, and mandatory warranty requirements.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3 class="step-title">Upload Quotes</h3>
+        <p class="step-desc">Drop supplier quotations in PDF, XLSX, or CSV formats. Parsers normalize unit prices, freight, and terms.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3 class="step-title">Analyze Risks</h3>
+        <p class="step-desc">Evaluate historical on-time rates, compliance certificates, warranty deficits, and delivery timeline buffers.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h3 class="step-title">Optimize Costs</h3>
+        <p class="step-desc">Calculate transparent total cost of ownership including discounts, regional taxes, freight, and installation.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">5</div>
+        <h3 class="step-title">Shortlist & Decide</h3>
+        <p class="step-desc">Review ranked recommendations with clear trade-offs, negotiation tips, and downloadable PDF/CSV reports.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- The Six Specialized AI Agents Section -->
+<section class="section-padding" id="agents">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Multi-Agent Intelligence</span>
+      <h2 class="section-title">Six Specialized Autonomous Agents</h2>
+      <p class="section-subtitle">Orchestrated with LangGraph and local deterministic fallbacks for 100% offline accuracy.</p>
+    </div>
+
+    <div class="agents-grid">
+      <div class="agent-box">
+        <div class="agent-header-row">
+          <div class="agent-icon-badge" style="background-color: var(--pastel-blue); color: var(--primary-blue);">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <div>
+            <div class="agent-num-tag">AGENT 01</div>
+            <h3 class="agent-name">Requirement Parser</h3>
+          </div>
+        </div>
+        <p class="agent-purpose">Converts raw procurement requests into structured mandatory constraints and preferred criteria.</p>
+        <div class="agent-footer-details">
+          <span>Inputs: RFP Specs</span>
+          <span>Outputs: Constraint Gates</span>
+        </div>
+      </div>
+
+      <div class="agent-box">
+        <div class="agent-header-row">
+          <div class="agent-icon-badge" style="background-color: var(--pastel-lavender); color: var(--lavender-accent);">
+            <i class="bi bi-file-earmark-spreadsheet"></i>
+          </div>
+          <div>
+            <div class="agent-num-tag">AGENT 02</div>
+            <h3 class="agent-name">Quote Analyzer</h3>
+          </div>
+        </div>
+        <p class="agent-purpose">Extracts and normalizes multi-format quotation documents, surfacing missing fields for human confirmation.</p>
+        <div class="agent-footer-details">
+          <span>Inputs: PDF/XLSX/CSV</span>
+          <span>Outputs: Normalized Bids</span>
+        </div>
+      </div>
+
+      <div class="agent-box">
+        <div class="agent-header-row">
+          <div class="agent-icon-badge" style="background-color: var(--pastel-mint); color: var(--green-accent);">
+            <i class="bi bi-building-check"></i>
+          </div>
+          <div>
+            <div class="agent-num-tag">AGENT 03</div>
+            <h3 class="agent-name">Supplier Researcher</h3>
+          </div>
+        </div>
+        <p class="agent-purpose">Gathers verified vendor reliability profiles, historical on-time delivery rates, defect history, and certifications.</p>
+        <div class="agent-footer-details">
+          <span>Inputs: Vendor IDs</span>
+          <span>Outputs: Verified Profiles</span>
+        </div>
+      </div>
+
+      <div class="agent-box">
+        <div class="agent-header-row">
+          <div class="agent-icon-badge" style="background-color: var(--pastel-peach); color: var(--orange-accent);">
+            <i class="bi bi-shield-exclamation"></i>
+          </div>
+          <div>
+            <div class="agent-num-tag">AGENT 04</div>
+            <h3 class="agent-name">Risk Assessor</h3>
+          </div>
+        </div>
+        <p class="agent-purpose">Evaluates delivery risk, compliance evidence, warranty limitations, and unusual commercial terms deterministically.</p>
+        <div class="agent-footer-details">
+          <span>Inputs: Bids & Evidence</span>
+          <span>Outputs: 0-100 Risk Scores</span>
+        </div>
+      </div>
+
+      <div class="agent-box">
+        <div class="agent-header-row">
+          <div class="agent-icon-badge" style="background-color: #E0F2FE; color: #0284C7;">
+            <i class="bi bi-cash-coin"></i>
+          </div>
+          <div>
+            <div class="agent-num-tag">AGENT 05</div>
+            <h3 class="agent-name">Cost Optimizer</h3>
+          </div>
+        </div>
+        <p class="agent-purpose">Calculates landed total costs (subtotal, discounts, freight, installation, taxes) separating arithmetic from narrative.</p>
+        <div class="agent-footer-details">
+          <span>Inputs: Pricing Rows</span>
+          <span>Outputs: Landed Costs</span>
+        </div>
+      </div>
+
+      <div class="agent-box">
+        <div class="agent-header-row">
+          <div class="agent-icon-badge" style="background-color: #FDF2F8; color: #DB2777;">
+            <i class="bi bi-award"></i>
+          </div>
+          <div>
+            <div class="agent-num-tag">AGENT 06</div>
+            <h3 class="agent-name">Procurement Advisor</h3>
+          </div>
+        </div>
+        <p class="agent-purpose">Synthesizes all evidence into an explainable ranked shortlist, highlighting the recommended vendor and negotiation tactics.</p>
+        <div class="agent-footer-details">
+          <span>Inputs: 5 Agent Outputs</span>
+          <span>Outputs: Explainable Shortlist</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- About Section -->
+<section class="section-padding" id="about" style="background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%);">
+  <div class="container">
+    <div class="card" style="padding: 48px; border-radius: var(--radius-xl); text-align: center; max-width: 900px; margin: 0 auto;">
+      <h2 style="font-size: 2.2rem; margin-bottom: 16px;">Ready for Transparent Procurement Intelligence?</h2>
+      <p style="color: var(--text-secondary); font-size: 1.05rem; max-width: 640px; margin: 0 auto 32px auto;">
+        Sign up in seconds, upload your supplier quotations, and run autonomous risk and negotiation intelligence on demand.
+      </p>
+      <div style="display: flex; gap: 16px; justify-content: center;">
+        <a href="{{ url_for('auth.signup') }}" class="btn btn-orange btn-lg">Get Started Free</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">Sign In with Existing Account</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="landing-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="brand-logo">
+          <div class="logo-swirl"></div>
+          <div class="brand-text">
+            <span class="brand-title">PROCUREMENT<span>IQ</span> AI</span>
+            <span class="brand-tagline">Autonomous Procurement Risk & Negotiation Intelligence</span>
+          </div>
+        </div>
+        <p>Enterprise SaaS platform enabling transparent, explainable, and risk-aware procurement decision making.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="#features">Quotation Extraction</a></li>
+          <li><a href="#agents">Six AI Agents</a></li>
+          <li><a href="#how-it-works">Cost Optimization</a></li>
+          <li><a href="#about">Risk Assessment</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="{{ url_for('dashboard.landing') }}">Home</a></li>
+          <li><a href="{{ url_for('auth.login') }}">Sign In</a></li>
+          <li><a href="{{ url_for('auth.signup') }}">Create Account</a></li>
+          <li><a href="{{ url_for('dashboard.dashboard_view') }}">Dashboard</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Compliance</h4>
+        <ul>
+          <li><a href="#about">ISO 9001 Certified Audits</a></li>
+          <li><a href="#about">Explainable AI Framework</a></li>
+          <li><a href="#about">Data Privacy & Security</a></li>
+          <li><a href="#about">Offline DEMO MODE</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>&copy; 2026 PROCUREMENTIQ AI. All rights reserved. Enterprise Procurement Intelligence System.</span>
+      <span>Designed with Soft Pastel Enterprise System</span>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Assessment Detail — {{ risk.supplier_name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <a href="{{ url_for('risks.list_risks') }}" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-left"></i> All Risks
+      </a>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Risk Assessment Report</h1>
+      <span class="badge {% if risk.risk_category == 'Low Risk' %}badge-risk-low{% elif risk.risk_category == 'Medium Risk' %}badge-risk-medium{% else %}badge-risk-high{% endif %}">
+        {{ risk.risk_category }}
+      </span>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">
+      Supplier: <strong>{{ risk.supplier_name }}</strong> &middot; Request: <strong>{{ risk.request_code }} ({{ risk.item_name }})</strong>
+    </p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 24px; margin-bottom: 28px;">
+  <div class="card">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px;">
+      <div>
+        <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Overall Risk Score</span>
+        <div style="font-size: 2.2rem; font-weight: 800; color: {% if risk.overall_risk_score <= 25 %}#166534{% elif risk.overall_risk_score <= 55 %}#92400E{% else %}#B91C1C{% endif %};">
+          {{ risk.overall_risk_score }} / 100
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <span style="font-size: 0.78rem; color: var(--text-muted); display: block;">Evaluation Rule Base</span>
+        <strong style="color: var(--dark-navy);">Deterministic Heuristics v2026.1</strong>
+      </div>
+    </div>
+
+    <!-- Multi-dimensional Risk Breakdown -->
+    <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 14px;">Risk Vector Assessment</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+      <div style="background-color: var(--bg-primary); padding: 14px; border-radius: var(--radius-md);">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Delivery Lead Time Risk</span>
+        <strong style="color: {% if risk.delivery_risk == 'Low' %}#166534{% elif risk.delivery_risk == 'Medium' %}#92400E{% else %}#B91C1C{% endif %}; font-size: 1rem;">
+          {{ risk.delivery_risk }} Risk
+        </strong>
+      </div>
+      <div style="background-color: var(--bg-primary); padding: 14px; border-radius: var(--radius-md);">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Quality & Defect Compliance</span>
+        <strong style="color: {% if risk.compliance_risk == 'Verified' or risk.compliance_risk == 'Low' %}#166534{% else %}#B91C1C{% endif %}; font-size: 1rem;">
+          {{ risk.compliance_risk }}
+        </strong>
+      </div>
+      <div style="background-color: var(--bg-primary); padding: 14px; border-radius: var(--radius-md);">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Commercial Terms & Payment</span>
+        <strong style="color: var(--dark-navy); font-size: 1rem;">{{ risk.commercial_terms_risk }} Risk</strong>
+      </div>
+      <div style="background-color: var(--bg-primary); padding: 14px; border-radius: var(--radius-md);">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Documentation Completeness</span>
+        <strong style="color: var(--dark-navy); font-size: 1rem;">{{ risk.documentation_risk }} Risk</strong>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 18px;">
+      <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 6px;">
+        <i class="bi bi-file-earmark-check text-success"></i> Verified Supporting Evidence
+      </h4>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; background-color: #FAFCFF; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        {{ risk.supporting_evidence }}
+      </p>
+    </div>
+
+    <div style="margin-bottom: 18px;">
+      <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 6px;">
+        <i class="bi bi-question-circle text-warning"></i> Missing Information / Evidence Gaps
+      </h4>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; background-color: #FAFCFF; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        {{ risk.missing_evidence }}
+      </p>
+    </div>
+
+    <div>
+      <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 6px;">
+        <i class="bi bi-shield-plus text-primary"></i> Recommended Mitigation Strategy
+      </h4>
+      <p style="font-size: 0.88rem; color: var(--dark-navy); line-height: 1.5; background-color: var(--pastel-mint); padding: 14px; border-radius: var(--radius-md); font-weight: 500; border: 1px solid rgba(32, 167, 122, 0.2);">
+        {{ risk.recommended_mitigation }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Related Request & Supplier Context -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div class="card">
+      <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 14px;">Procurement Context</h3>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.86rem;">
+        <li>
+          <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Request Code</span>
+          <strong>{{ risk.request_code }}</strong>
+        </li>
+        <li>
+          <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Budget Ceiling</span>
+          <strong>${{ "{:,.2f}".format(risk.budget) }}</strong>
+        </li>
+        <li>
+          <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Delivery Deadline</span>
+          <strong>{{ risk.required_delivery_date }}</strong>
+        </li>
+        <li>
+          <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Quotation Reference</span>
+          <strong>{{ risk.quotation_number or 'N/A' }}</strong>
+        </li>
+      </ul>
+      <div style="margin-top: 16px; pt-3; border-top: 1px solid var(--border-color);">
+        <a href="{{ url_for('procurement.request_detail', request_id=risk.request_id) }}" class="btn btn-secondary btn-sm" style="width: 100%;">
+          View Procurement Request
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

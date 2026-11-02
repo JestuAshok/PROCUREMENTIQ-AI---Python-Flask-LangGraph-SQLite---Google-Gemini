@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Settings & Scoring Weights — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+  <div style="margin-bottom: 24px;">
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Configuration & Decision Weights</h1>
+    <p style="color: var(--text-secondary); font-size: 0.92rem;">
+      Customize multi-criteria scoring engine weights, enterprise purchasing currency, and procurement defaults.
+    </p>
+  </div>
+
+  <div class="card" style="padding: 32px; margin-bottom: 28px;">
+    <form action="{{ url_for('settings.settings_view') }}" method="POST">
+
+      <!-- Section 1: Multi-Criteria Scoring Weights -->
+      <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 24px;">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 6px;">
+          <i class="bi bi-sliders text-primary"></i> Multi-Criteria Scoring Weights
+        </h3>
+        <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 18px;">
+          Define how much each evaluation pillar contributes to the final supplier ranking (0.0 to 1.0, summing to 1.0 / 100%).
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="form-group">
+            <label class="form-label">Total Cost Weight (Default: 40% = 0.40)</label>
+            <input type="number" step="0.05" min="0" max="1" name="weight_cost" class="form-control" value="{{ settings.weight_cost }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Delivery Performance Weight (Default: 25% = 0.25)</label>
+            <input type="number" step="0.05" min="0" max="1" name="weight_delivery" class="form-control" value="{{ settings.weight_delivery }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Risk Assessment Weight (Default: 20% = 0.20)</label>
+            <input type="number" step="0.05" min="0" max="1" name="weight_risk" class="form-control" value="{{ settings.weight_risk }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Warranty & Support Weight (Default: 15% = 0.15)</label>
+            <input type="number" step="0.05" min="0" max="1" name="weight_warranty" class="form-control" value="{{ settings.weight_warranty }}" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Currency & Locale -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 6px;">
+          <i class="bi bi-globe text-primary"></i> Purchasing Currency & Region
+        </h3>
+        <div style="max-width: 300px;">
+          <label class="form-label">Default Purchasing Currency</label>
+          <select name="default_currency" class="form-select">
+            <option value="USD" {% if settings.default_currency == 'USD' %}selected{% endif %}>USD — US Dollar ($)</option>
+            <option value="EUR" {% if settings.default_currency == 'EUR' %}selected{% endif %}>EUR — Euro (€)</option>
+            <option value="GBP" {% if settings.default_currency == 'GBP' %}selected{% endif %}>GBP — British Pound (£)</option>
+            <option value="INR" {% if settings.default_currency == 'INR' %}selected{% endif %}>INR — Indian Rupee (₹)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 14px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+        <button type="submit" class="btn btn-orange" id="btn-save-settings">
+          <i class="bi bi-check-lg"></i>
+          <span>Save Decision Weights</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

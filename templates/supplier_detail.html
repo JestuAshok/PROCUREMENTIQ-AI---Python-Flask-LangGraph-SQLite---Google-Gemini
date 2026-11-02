@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}{{ supplier.name }} — Supplier Profile{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <a href="{{ url_for('suppliers.list_suppliers') }}" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-left"></i> All Suppliers
+      </a>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">{{ supplier.name }}</h1>
+      <span class="badge {% if supplier.tier == 'Tier 1' %}badge-blue{% else %}badge-lavender{% endif %}">{{ supplier.tier }}</span>
+      <span class="badge {% if supplier.compliance_status == 'Verified' %}badge-risk-low{% else %}badge-risk-medium{% endif %}">{{ supplier.compliance_status }}</span>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">
+      Code: <code>{{ supplier.code }}</code> &middot; Location: {{ supplier.country }} &middot; Category: {{ supplier.category }}
+    </p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px;">
+  <div class="card">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 16px;">
+      Historical Performance & Compliance Metrics
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; text-align: center; margin-bottom: 20px;">
+      <div style="background-color: var(--bg-primary); padding: 14px; border-radius: var(--radius-md);">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Overall Rating</span>
+        <strong style="font-size: 1.3rem; color: var(--orange-accent);">{{ supplier.rating }}/5.0</strong>
+      </div>
+      <div style="background-color: var(--bg-primary); padding: 14px; border-radius: var(--radius-md);">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">On-Time Delivery</span>
+        <strong style="font-size: 1.3rem; color: var(--green-accent);">{{ supplier.on_time_delivery_rate }}%</strong>
+      </div>
+      <div style="background-color: var(--bg-primary); padding: 14px; border-radius: var(--radius-md);">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Defect Rate</span>
+        <strong style="font-size: 1.3rem; color: var(--dark-navy);">{{ supplier.defect_rate }}%</strong>
+      </div>
+      <div style="background-color: var(--bg-primary); padding: 14px; border-radius: var(--radius-md);">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Financial Health</span>
+        <strong style="font-size: 1.1rem; color: var(--primary-blue);">{{ supplier.financial_stability }}</strong>
+      </div>
+    </div>
+
+    <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 8px;">Vendor Audit Notes</h4>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+      {{ supplier.notes or 'No specific audit warnings on file.' }}
+    </p>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 16px;">
+      Contact & Enterprise Details
+    </h3>
+    <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem;">
+      <li>
+        <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Email</span>
+        <strong>{{ supplier.contact_email or 'contact@enterprise.com' }}</strong>
+      </li>
+      <li>
+        <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Phone</span>
+        <strong>{{ supplier.contact_phone or '+1-800-555-0100' }}</strong>
+      </li>
+      <li>
+        <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Years in Business</span>
+        <strong>{{ supplier.years_in_business }} years</strong>
+      </li>
+      <li>
+        <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Database Origin</span>
+        <span class="badge badge-muted">{% if supplier.is_demo %}Pre-seeded Benchmark Vendor{% else %}Custom Registry{% endif %}</span>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- Past Quotations -->
+<div class="data-table-card">
+  <div class="table-card-header">
+    <h3 class="table-card-title">Quotation & Proposal History ({{ quotations|length }})</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Request Code</th>
+          <th>Item / Equipment</th>
+          <th>Quote No</th>
+          <th>Landed Total</th>
+          <th>Warranty</th>
+          <th>Delivery</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in quotations %}
+        <tr>
+          <td><strong>{{ q.request_code }}</strong></td>
+          <td>{{ q.item_name }}</td>
+          <td>{{ q.quotation_number }}</td>
+          <td><strong style="color: var(--primary-blue);">{{ q.currency }} {{ "{:,.2f}".format(q.total_cost) }}</strong></td>
+          <td>{{ q.warranty_months }} mo</td>
+          <td>{{ q.delivery_days }} days</td>
+          <td><span class="badge badge-blue">Quoted</span></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+            No quotation history on file for this vendor yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

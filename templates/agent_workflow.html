@@ -1,0 +1,1110 @@
+{% extends "base.html" %}
+
+{% block title %}AI Procurement Analysis — Step {{ active_step }} of 6 ({{ proc_req.request_code }}){% endblock %}
+
+{% block content %}
+<div class="workflow-container">
+
+  <!-- Page Heading & Requisition Metadata -->
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 4px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <a href="{{ url_for('procurement.request_detail', request_id=proc_req.id) }}" class="btn btn-outline btn-sm">
+          <i class="bi bi-arrow-left"></i> Request
+        </a>
+        <h1 style="font-size: 1.85rem; font-weight: 800; color: var(--dark-navy); margin: 0;">AI Procurement Analysis</h1>
+        <span class="badge badge-blue" style="font-size: 0.85rem; padding: 6px 12px;">{{ proc_req.request_code }}</span>
+      </div>
+      <p style="color: var(--text-secondary); font-size: 0.94rem; margin-top: 6px; margin-bottom: 0;">
+        Analyze supplier quotations through six specialized AI agents, one step at a time.
+      </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="workflow-progress-pill">
+        <i class="bi bi-check2-circle" style="color: var(--green-accent); font-size: 1.05rem;"></i>
+        <span>Step {{ completed_count }} of 6 completed</span>
+      </div>
+      {% if latest_run and latest_run.execution_mode %}
+        <span class="badge badge-muted" style="font-size: 0.78rem; padding: 6px 10px;">
+          Mode: {{ latest_run.execution_mode }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Horizontal Stepper (Desktop) / Vertical Stepper (Mobile) -->
+  <div class="workflow-stepper-card">
+    <div class="workflow-stepper-header">
+      <div>
+        <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Sequential Execution Stepper</span>
+        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--dark-navy); margin-top: 2px; margin-bottom: 0;">Multi-Agent Pipeline Nodes</h4>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; font-size: 0.76rem;">
+        <span style="display: flex; align-items: center; gap: 5px; color: var(--green-accent); font-weight: 600;">
+          <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Completed
+        </span>
+        <span style="display: flex; align-items: center; gap: 5px; color: var(--primary-blue); font-weight: 600;">
+          <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Current
+        </span>
+        <span style="display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-weight: 600;">
+          <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Pending / Locked
+        </span>
+        <span style="display: flex; align-items: center; gap: 5px; color: var(--danger); font-weight: 600;">
+          <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Failed
+        </span>
+      </div>
+    </div>
+
+    <!-- Desktop Stepper -->
+    <div class="workflow-stepper-desktop">
+      {% for step in steps_state %}
+        {% if not step.is_locked %}
+          <a href="{{ url_for('workflow.view_workflow', request_id=proc_req.id, step=step.number) }}"
+             class="step-node {% if step.is_current %}current{% elif step.is_completed %}completed{% elif step.is_ready %}ready{% elif step.is_failed %}failed{% else %}locked{% endif %}"
+             title="View Step {{ step.number }}: {{ step.name }}">
+            <div class="step-node-icon">
+              <i class="bi {% if step.is_completed %}bi-check-lg{% else %}{{ step.icon }}{% endif %}"></i>
+            </div>
+            <span class="step-node-num">Step 0{{ step.number }}</span>
+            <span class="step-node-name">{{ step.short_name }}</span>
+            <span class="step-status-pill {% if step.is_current %}current{% elif step.is_completed %}completed{% elif step.is_ready %}ready{% elif step.is_failed %}failed{% else %}locked{% endif %}">
+              {{ step.status }}
+            </span>
+          </a>
+        {% else %}
+          <div class="step-node locked" title="Complete Step {{ step.number - 1 }} before accessing Step {{ step.number }}">
+            <div class="step-node-icon">
+              <i class="bi bi-lock-fill"></i>
+            </div>
+            <span class="step-node-num">Step 0{{ step.number }}</span>
+            <span class="step-node-name">{{ step.short_name }}</span>
+            <span class="step-status-pill locked">Locked</span>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- Mobile Stepper -->
+    <div class="workflow-stepper-mobile">
+      {% for step in steps_state %}
+        {% if not step.is_locked %}
+          <a href="{{ url_for('workflow.view_workflow', request_id=proc_req.id, step=step.number) }}"
+             class="step-node-mobile"
+             style="border-color: {% if step.is_current %}var(--primary-blue){% elif step.is_completed %}var(--green-accent){% else %}var(--border-color){% endif %};
+                    background-color: {% if step.is_current %}#EEF4FF{% elif step.is_completed %}var(--pastel-mint){% else %}#F8FAFC{% endif %};">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; color: var(--dark-navy);">
+                <i class="bi {{ step.icon }}"></i>
+              </div>
+              <div>
+                <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">STEP 0{{ step.number }}</span>
+                <div style="font-size: 0.88rem; font-weight: 700; color: var(--dark-navy);">{{ step.short_name }}</div>
+              </div>
+            </div>
+            <span class="step-status-pill {% if step.is_current %}current{% elif step.is_completed %}completed{% elif step.is_ready %}ready{% elif step.is_failed %}failed{% else %}locked{% endif %}">
+              {{ step.status }}
+            </span>
+          </a>
+        {% else %}
+          <div class="step-node-mobile" style="opacity: 0.6; cursor: not-allowed; background-color: #F1F5F9;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #E2E8F0; color: #94A3B8;">
+                <i class="bi bi-lock-fill"></i>
+              </div>
+              <div>
+                <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">STEP 0{{ step.number }}</span>
+                <div style="font-size: 0.88rem; font-weight: 700; color: #64748B;">{{ step.short_name }}</div>
+              </div>
+            </div>
+            <span class="step-status-pill locked">Locked</span>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Dedicated Step Results Panel (12-Part Structure) -->
+  <div class="agent-step-panel">
+
+    <!-- 1. Agent Name & Badge | 2. Purpose | 3. Inputs | 4. Status & Metrics -->
+    <div class="panel-header-bar">
+      <div class="panel-title-group">
+        <div class="panel-icon-circle" style="background-color: var(--pastel-blue); color: var(--primary-blue);">
+          <i class="bi {{ active_step_data.icon }}"></i>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="badge badge-muted" style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em;">AGENT 0{{ active_step_data.number }}</span>
+            <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--dark-navy); margin: 0;">{{ active_step_data.name }}</h2>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.92rem; margin-top: 4px; margin-bottom: 0;">
+            {{ active_step_data.purpose }}
+          </p>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="step-status-pill {% if active_step_data.is_completed %}completed{% elif active_step_data.is_current %}current{% elif active_step_data.is_failed %}failed{% else %}ready{% endif %}" style="font-size: 0.82rem; padding: 6px 14px;">
+          <i class="bi {% if active_step_data.is_completed %}bi-check-circle-fill{% elif active_step_data.is_failed %}bi-x-circle-fill{% else %}bi-clock{% endif %}"></i>
+          {{ active_step_data.status }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Execution Metrics Strip -->
+    <div class="panel-metrics-strip">
+      <div class="panel-metric-box">
+        <span class="panel-metric-label">Execution Status</span>
+        <span class="panel-metric-val" style="color: {% if active_step_data.is_completed %}var(--green-accent){% elif active_step_data.is_failed %}var(--danger){% else %}var(--primary-blue){% endif %};">
+          {{ active_step_data.status }}
+        </span>
+      </div>
+      <div class="panel-metric-box">
+        <span class="panel-metric-label">Duration</span>
+        <span class="panel-metric-val">
+          {% if active_step_data.execution_duration %}{{ active_step_data.execution_duration }}s{% else %}—{% endif %}
+        </span>
+      </div>
+      <div class="panel-metric-box">
+        <span class="panel-metric-label">Request ID</span>
+        <span class="panel-metric-val">{{ proc_req.request_code }}</span>
+      </div>
+      <div class="panel-metric-box">
+        <span class="panel-metric-label">Input Context</span>
+        <span class="panel-metric-val" style="font-size: 0.85rem;">
+          {% if active_step == 1 %}1 Requisition Specification
+          {% elif active_step == 2 %}{{ quotes_count }} Quotation Document(s)
+          {% elif active_step == 3 %}{{ quotes_count }} Supplier Records
+          {% elif active_step == 4 %}{{ quotes_count }} Quotations & Profiles
+          {% elif active_step == 5 %}{{ quotes_count }} Commercial Bids
+          {% elif active_step == 6 %}All 5 Prior Agent Outputs
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- IF STEP IS NOT COMPLETED: DISPLAY READY / FAILED TRIGGER CARD -->
+    {% if not active_step_data.is_completed %}
+      <div class="card" style="text-align: center; padding: 48px 24px; background: linear-gradient(180deg, #F8FAFF 0%, #FFFFFF 100%); border: 1.5px dashed var(--primary-blue); border-radius: 18px;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background-color: var(--pastel-blue); color: var(--primary-blue); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 16px;">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--dark-navy); margin-bottom: 8px;">
+          Ready to Execute Step {{ active_step_data.number }}: {{ active_step_data.name }}
+        </h3>
+        <p style="max-width: 580px; margin: 0 auto 24px; color: var(--text-secondary); font-size: 0.92rem; line-height: 1.55;">
+          This agent executes independently and produces deterministic analytical findings, explanatory paragraphs, structured tables, and visualizations before advancing to subsequent steps.
+        </p>
+
+        {% if active_step == 2 and quotes_count == 0 %}
+          <div class="alert alert-warning" style="max-width: 500px; margin: 0 auto 20px;">
+            <i class="bi bi-exclamation-triangle-fill"></i> No quotation files uploaded yet. Please upload at least one quotation to analyze.
+          </div>
+          <a href="{{ url_for('procurement.upload_quote', request_id=proc_req.id) }}" class="btn btn-secondary">
+            <i class="bi bi-upload"></i> Upload Quotations
+          </a>
+        {% else %}
+          <form action="{{ url_for('workflow.run_single_step', request_id=proc_req.id, step_number=active_step_data.number) }}" method="POST" class="step-exec-form">
+            <button type="submit" class="btn btn-orange btn-lg" id="btn-run-step-{{ active_step_data.number }}">
+              <i class="bi bi-play-circle-fill"></i>
+              <span>Run {{ active_step_data.name }}</span>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+
+    {% else %}
+      <!-- STEP IS COMPLETED: RENDER DETAILED 12-PART RESULTS -->
+      {% set out = active_step_data.output %}
+
+      <!-- 5. EXECUTION SUMMARY -->
+      <div>
+        <h3 class="section-title-sm">
+          <i class="bi bi-card-checklist" style="color: var(--primary-blue);"></i> A. Execution Summary
+        </h3>
+        <div class="card" style="background-color: #FAFCFF; border: 1px solid var(--border-color); padding: 18px 20px;">
+          <p style="font-size: 0.94rem; color: var(--dark-navy); margin: 0; font-weight: 500; line-height: 1.55;">
+            {{ active_step_data.output_summary or out.output_summary }}
+          </p>
+          {% if out.execution_summary %}
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+              <span><strong>Started:</strong> {{ out.execution_summary.started_at }}</span>
+              <span><strong>Completed:</strong> {{ out.execution_summary.completed_at }}</span>
+              <span><strong>Duration:</strong> {{ out.execution_summary.duration_seconds }}s</span>
+              <span><strong>Agent Node:</strong> {{ out.agent_name }}</span>
+              {% if out.ai_engine %}
+                <span><strong>Intelligence Engine:</strong> <span class="badge {% if 'Gemini' in out.ai_engine %}badge-mint{% else %}badge-blue{% endif %}"><i class="bi bi-stars"></i> {{ out.ai_engine }}</span></span>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- 6. DETAILED NATURAL-LANGUAGE EXPLANATION -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 class="section-title-sm" style="margin: 0;">
+            <i class="bi bi-chat-left-quote" style="color: var(--lavender-accent);"></i> B. Natural-Language Explanation & Synthesis
+          </h3>
+          {% if out.ai_engine and ('Groq' in out.ai_engine or 'qwen' in out.ai_engine or 'ngrok' in out.ai_engine) %}
+            <span class="badge badge-mint" style="font-size: 0.74rem;"><i class="bi bi-cpu-fill"></i> Generated by Groq AI Engine</span>
+          {% elif out.ai_engine and 'Gemini' in out.ai_engine %}
+            <span class="badge badge-mint" style="font-size: 0.74rem;"><i class="bi bi-stars"></i> Generated by Google Gemini</span>
+          {% endif %}
+        </div>
+        <div class="explanation-card">
+          {% if out.explanation_paragraphs %}
+            {% for para in out.explanation_paragraphs %}
+              <p style="margin-bottom: {% if loop.last %}0{% else %}14px{% endif %};">{{ para }}</p>
+            {% endfor %}
+          {% elif out.recommendation_explanation_sections %}
+            <!-- Step 6 Nine Structured Sections -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              {% for sec in out.recommendation_explanation_sections %}
+                <div>
+                  <h5 style="font-size: 0.95rem; font-weight: 700; color: var(--primary-blue); margin-bottom: 4px;">{{ sec.title }}</h5>
+                  <p style="font-size: 0.9rem; color: var(--dark-navy); margin: 0; line-height: 1.55;">{{ sec.content }}</p>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p>{{ active_step_data.output_summary }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- 7. KEY FINDINGS BULLET POINTS -->
+      <div>
+        <h3 class="section-title-sm">
+          <i class="bi bi-stars" style="color: var(--orange-accent);"></i> C. Key Findings & Extracted Observations
+        </h3>
+        <ul class="findings-list">
+          {% for finding in out.key_findings %}
+            <li class="findings-item">
+              <i class="bi bi-check2-circle"></i>
+              <span>{{ finding }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- 8. STRUCTURED TABLES PER AGENT -->
+      <div>
+        {% if active_step == 1 and out.classification_table %}
+          <h3 class="section-title-sm">
+            <i class="bi bi-table" style="color: var(--green-accent);"></i> D. Requirement Classification Matrix
+          </h3>
+          <div class="workflow-table-wrapper">
+            <table class="workflow-table">
+              <thead>
+                <tr>
+                  <th>Requirement</th>
+                  <th>Type</th>
+                  <th>Specified Value</th>
+                  <th>Validation Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in out.classification_table %}
+                  <tr>
+                    <td style="font-weight: 600;">{{ row.requirement }}</td>
+                    <td>
+                      <span class="badge {% if row.type == 'Mandatory' %}badge-orange{% elif row.type == 'Preferred' %}badge-blue{% else %}badge-muted{% endif %}">
+                        {{ row.type }}
+                      </span>
+                    </td>
+                    <td><code>{{ row.value }}</code></td>
+                    <td>
+                      <span class="badge {% if 'Critical' in row.validation_status %}badge-green{% elif 'Needs' in row.validation_status or 'Missing' in row.validation_status %}badge-orange{% else %}badge-blue{% endif %}">
+                        {{ row.validation_status }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        {% elif active_step == 2 and out.quotation_table %}
+          <h3 class="section-title-sm">
+            <i class="bi bi-table" style="color: var(--green-accent);"></i> D. Supplier Quotation Extraction Ledger
+          </h3>
+          <div class="workflow-table-wrapper">
+            <table class="workflow-table">
+              <thead>
+                <tr>
+                  <th>Supplier Name</th>
+                  <th>Quote #</th>
+                  <th>Unit Price</th>
+                  <th>Qty</th>
+                  <th>Discount</th>
+                  <th>Tax</th>
+                  <th>Shipping</th>
+                  <th>Delivery Lead</th>
+                  <th>Warranty</th>
+                  <th>Terms</th>
+                  <th>Missing Fields</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in out.quotation_table %}
+                  <tr>
+                    <td style="font-weight: 700;">{{ row.supplier_name }}</td>
+                    <td>{{ row.quote_number }}</td>
+                    <td style="font-weight: 600; color: var(--primary-blue);">{{ row.unit_price }}</td>
+                    <td>{{ row.quantity }}</td>
+                    <td>{{ row.discount }}</td>
+                    <td>{{ row.tax }}</td>
+                    <td>{{ row.shipping }}</td>
+                    <td>{{ row.delivery_time }}</td>
+                    <td>{{ row.warranty }}</td>
+                    <td>{{ row.payment_terms }}</td>
+                    <td>
+                      {% if row.missing_fields == 'None' %}
+                        <span style="color: var(--green-accent); font-weight: 600;">None</span>
+                      {% else %}
+                        <span style="color: #D97706; font-size: 0.8rem;">{{ row.missing_fields }}</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge badge-mint">{{ row.extraction_confidence }}</span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        {% elif active_step == 3 and out.evidence_table %}
+          <h3 class="section-title-sm">
+            <i class="bi bi-table" style="color: var(--green-accent);"></i> D. Supplier Background & Evidence Ledger
+          </h3>
+          <div class="workflow-table-wrapper">
+            <table class="workflow-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Verified Evidence Item</th>
+                  <th>Source Repository</th>
+                  <th>Verification Status</th>
+                  <th>Last Audited</th>
+                  <th>Limitations / Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in out.evidence_table %}
+                  <tr>
+                    <td style="font-weight: 700;">{{ row.supplier }}</td>
+                    <td>{{ row.evidence }}</td>
+                    <td><code>{{ row.source }}</code></td>
+                    <td>
+                      <span class="badge {% if row.verification_status == 'Verified' %}badge-green{% else %}badge-orange{% endif %}">
+                        {{ row.verification_status }}
+                      </span>
+                    </td>
+                    <td>{{ row.date }}</td>
+                    <td style="font-size: 0.82rem; color: var(--text-muted);">{{ row.limitations }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        {% elif active_step == 4 and out.risk_register_table %}
+          <h3 class="section-title-sm">
+            <i class="bi bi-table" style="color: var(--green-accent);"></i> D. Procurement Risk Register & Action Plan
+          </h3>
+          <div class="workflow-table-wrapper">
+            <table class="workflow-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Risk Category</th>
+                  <th>Risk Score</th>
+                  <th>Severity</th>
+                  <th>Supporting Empirical Evidence</th>
+                  <th>Recommended Mitigation Strategy</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in out.risk_register_table %}
+                  <tr>
+                    <td style="font-weight: 700;">{{ row.supplier }}</td>
+                    <td>
+                      <span class="badge {% if row.category == 'Low Risk' %}badge-green{% elif row.category == 'Medium Risk' %}badge-orange{% else %}badge-danger{% endif %}">
+                        {{ row.category }}
+                      </span>
+                    </td>
+                    <td style="font-weight: 700;">{{ row.risk_score }}</td>
+                    <td>
+                      <span class="badge {% if row.severity == 'Low' %}badge-green{% elif row.severity == 'Medium' %}badge-orange{% else %}badge-danger{% endif %}">
+                        {{ row.severity }}
+                      </span>
+                    </td>
+                    <td style="font-size: 0.84rem;">{{ row.evidence }}</td>
+                    <td style="font-size: 0.84rem; color: var(--primary-blue); font-weight: 500;">{{ row.mitigation }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        {% elif active_step == 5 and out.cost_breakdown_table %}
+          <h3 class="section-title-sm">
+            <i class="bi bi-table" style="color: var(--green-accent);"></i> D. Detailed Deterministic Landed Cost Breakdown
+          </h3>
+          <div class="workflow-table-wrapper">
+            <table class="workflow-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Gross Subtotal</th>
+                  <th>Discount</th>
+                  <th>Net Subtotal</th>
+                  <th>Tax</th>
+                  <th>Shipping</th>
+                  <th>Installation</th>
+                  <th>Other Fees</th>
+                  <th>Estimated Total</th>
+                  <th>Budget Variance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in out.cost_breakdown_table %}
+                  <tr style="{% if row.is_within_budget %}background-color: #FAFFFC;{% else %}background-color: #FFF8F8;{% endif %}">
+                    <td style="font-weight: 700;">{{ row.supplier_name }}</td>
+                    <td>{{ row.gross_subtotal }}</td>
+                    <td>{{ row.discount }}</td>
+                    <td style="font-weight: 600;">{{ row.net_subtotal }}</td>
+                    <td>{{ row.tax }}</td>
+                    <td>{{ row.shipping }}</td>
+                    <td>{{ row.installation }}</td>
+                    <td>{{ row.other_charges }}</td>
+                    <td style="font-weight: 800; color: var(--dark-navy); font-size: 0.95rem;">{{ row.estimated_total }}</td>
+                    <td>
+                      <span class="badge {% if row.is_within_budget %}badge-green{% else %}badge-danger{% endif %}">
+                        {{ row.budget_difference }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        {% elif active_step == 6 and out.ranking_table %}
+          <h3 class="section-title-sm">
+            <i class="bi bi-table" style="color: var(--green-accent);"></i> D. Multi-Criteria Vendor Ranking Ledger
+          </h3>
+          <div class="workflow-table-wrapper">
+            <table class="workflow-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Supplier</th>
+                  <th>Cost Score ({{ (out.weights_used.cost * 100)|int }}%)</th>
+                  <th>Delivery ({{ (out.weights_used.delivery * 100)|int }}%)</th>
+                  <th>Risk Safety ({{ (out.weights_used.risk * 100)|int }}%)</th>
+                  <th>Warranty ({{ (out.weights_used.warranty * 100)|int }}%)</th>
+                  <th>Weighted Total</th>
+                  <th>Eligibility Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in out.ranking_table %}
+                  <tr style="{% if row.is_recommended %}background-color: #F0FFF8; border-left: 4px solid var(--green-accent);{% endif %}">
+                    <td style="font-weight: 800; font-size: 1rem;">
+                      {% if row.is_recommended %}<i class="bi bi-trophy-fill" style="color: #F59E0B;"></i> #1{% else %}#{{ row.rank }}{% endif %}
+                    </td>
+                    <td style="font-weight: 700;">
+                      {{ row.supplier_name }}
+                      {% if row.is_recommended %}
+                        <span class="badge badge-mint" style="margin-left: 6px;">Recommended Winner</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ row.cost_score }}</td>
+                    <td>{{ row.delivery_score }}</td>
+                    <td>{{ row.risk_score }}</td>
+                    <td>{{ row.warranty_score }}</td>
+                    <td style="font-weight: 800; font-size: 1rem; color: var(--primary-blue);">{{ row.weighted_total }} / 100</td>
+                    <td>
+                      <span class="badge {% if 'Eligible' in row.eligibility_status %}badge-green{% else %}badge-danger{% endif %}">
+                        {{ row.eligibility_status }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- 9. RELEVANT VISUALIZATIONS (CHART.JS CANVAS) -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 class="section-title-sm" style="margin: 0;">
+            <i class="bi bi-bar-chart-line-fill" style="color: var(--primary-blue);"></i> E. Graphical Intelligence Visualizations
+          </h3>
+          {% if out.ai_engine and 'Gemini' in out.ai_engine %}
+            <span class="badge badge-mint" style="font-size: 0.74rem;"><i class="bi bi-stars"></i> Gemini AI Driven Analytics</span>
+          {% endif %}
+        </div>
+
+        {% if active_step == 1 %}
+          <div class="chart-card-box">
+            <h5 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 4px;">Identified Criteria by Requisition Category</h5>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">Distribution of parsed evaluation constraints and preferences.</p>
+            <div class="chart-canvas-wrap">
+              <canvas id="chart-step-1"></canvas>
+            </div>
+          </div>
+
+        {% elif active_step == 2 %}
+          <div class="chart-card-box">
+            <h5 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 4px;">Quoted Unit Price Comparison Across Suppliers</h5>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">Normalized unit prices in {{ out.chart_data.currency or 'USD' }}.</p>
+            <div class="chart-canvas-wrap">
+              <canvas id="chart-step-2"></canvas>
+            </div>
+          </div>
+
+        {% elif active_step == 3 %}
+          <div class="chart-card-box">
+            <h5 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 4px;">Supplier Evidence Coverage (Verified Audit Records)</h5>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">Quantity of authenticated enterprise performance and ERP records available per supplier (coverage volume, not subjective quality).</p>
+            <div class="chart-canvas-wrap">
+              <canvas id="chart-step-3"></canvas>
+            </div>
+          </div>
+
+        {% elif active_step == 4 %}
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
+            <div class="chart-card-box">
+              <h5 style="font-size: 0.92rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 2px;">Risk Findings by Operational Dimension</h5>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Identified risk occurrences across categories.</p>
+              <div class="chart-canvas-wrap" style="min-height: 250px;">
+                <canvas id="chart-step-4-cat"></canvas>
+              </div>
+            </div>
+            <div class="chart-card-box">
+              <h5 style="font-size: 0.92rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 2px;">Supplier Risk Score Comparison</h5>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Overall risk score (0-100 scale, lower is safer).</p>
+              <div class="chart-canvas-wrap" style="min-height: 250px;">
+                <canvas id="chart-step-4-sup"></canvas>
+              </div>
+            </div>
+            <div class="chart-card-box">
+              <h5 style="font-size: 0.92rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 2px;">Risk Severity Distribution</h5>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Proportion of low, medium, and high risk candidates.</p>
+              <div class="chart-canvas-wrap" style="min-height: 250px;">
+                <canvas id="chart-step-4-pie"></canvas>
+              </div>
+            </div>
+          </div>
+
+        {% elif active_step == 5 %}
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px;">
+            <div class="chart-card-box">
+              <h5 style="font-size: 0.92rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 2px;">Total Landed Cost Comparison</h5>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">All-in estimated procurement cost per vendor.</p>
+              <div class="chart-canvas-wrap" style="min-height: 250px;">
+                <canvas id="chart-step-5-tot"></canvas>
+              </div>
+            </div>
+            <div class="chart-card-box">
+              <h5 style="font-size: 0.92rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 2px;">Cost Component Stacked Breakdown</h5>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Product subtotal, freight, taxes, and fees.</p>
+              <div class="chart-canvas-wrap" style="min-height: 250px;">
+                <canvas id="chart-step-5-comp"></canvas>
+              </div>
+            </div>
+            <div class="chart-card-box" style="grid-column: 1 / -1;">
+              <h5 style="font-size: 0.92rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 2px;">Landed Cost vs Budget Ceiling Comparison</h5>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Red line indicates requisition budget ceiling ({{ proc_req.currency }} {{ proc_req.budget|round(2) }}).</p>
+              <div class="chart-canvas-wrap" style="min-height: 260px;">
+                <canvas id="chart-step-5-bud"></canvas>
+              </div>
+            </div>
+          </div>
+
+        {% elif active_step == 6 %}
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px;">
+            <div class="chart-card-box">
+              <h5 style="font-size: 0.92rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 2px;">Multi-Criteria Weighted Evaluation Scores</h5>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Composite ranking score out of 100.</p>
+              <div class="chart-canvas-wrap" style="min-height: 260px;">
+                <canvas id="chart-step-6-score"></canvas>
+              </div>
+            </div>
+            <div class="chart-card-box">
+              <h5 style="font-size: 0.92rem; font-weight: 700; color: var(--dark-navy); margin-bottom: 2px;">Multi-Dimensional Evaluation Radar Matrix</h5>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Comparison across Cost, Delivery, Risk Safety, and Warranty dimensions.</p>
+              <div class="chart-canvas-wrap" style="min-height: 260px;">
+                <canvas id="chart-step-6-radar"></canvas>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- 10. WARNINGS & MISSING INFORMATION -->
+      {% if active_step_data.warnings or (out.warnings and out.warnings|length > 0) or out.information_gaps %}
+        <div>
+          <h3 class="section-title-sm">
+            <i class="bi bi-shield-exclamation" style="color: #D97706;"></i> F. Warnings, Data Gaps & Disclaimers
+          </h3>
+          <div class="card" style="background-color: #FFFBEB; border: 1px solid #FDE68A; padding: 18px 20px; border-radius: 14px;">
+            {% if active_step_data.warnings %}
+              <div style="color: #B45309; font-size: 0.88rem; font-weight: 600; margin-bottom: 8px;">
+                <i class="bi bi-exclamation-triangle-fill"></i> {{ active_step_data.warnings }}
+              </div>
+            {% endif %}
+
+            {% if out.warnings %}
+              <ul style="margin: 0; padding-left: 20px; font-size: 0.86rem; color: #92400E;">
+                {% for w in out.warnings %}
+                  <li style="margin-bottom: 4px;">{{ w }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            {% if out.information_gaps %}
+              <div style="margin-top: 10px; font-size: 0.84rem; color: #78350F; border-top: 1px solid #FDE68A; padding-top: 8px;">
+                <strong>Data Gaps:</strong>
+                <ul style="margin: 4px 0 0; padding-left: 20px;">
+                  {% for gap in out.information_gaps %}
+                    <li>{{ gap }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- 11. STRUCTURED AGENT OUTPUT JSON (COLLAPSIBLE) -->
+      <div>
+        <details class="card" style="background-color: #F8FAFC; border: 1px solid var(--border-color); border-radius: 14px; padding: 14px 18px; cursor: pointer;">
+          <summary style="font-weight: 700; color: var(--dark-navy); font-size: 0.9rem; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="bi bi-code-slash" style="color: var(--primary-blue);"></i> View Structured Agent JSON Payload (Audit Log)</span>
+            <span class="badge badge-muted" style="font-size: 0.72rem;">Click to expand</span>
+          </summary>
+          <div style="margin-top: 12px; position: relative;">
+            <pre style="background: #0F172A; color: #38BDF8; padding: 16px; border-radius: 10px; font-size: 0.78rem; overflow-x: auto; max-height: 380px; line-height: 1.45;">{{ out|tojson(indent=2) }}</pre>
+          </div>
+        </details>
+      </div>
+
+      <!-- STEP 6 SPECIFIC: HUMAN APPROVAL & DECISION GOVERNANCE -->
+      {% if active_step == 6 %}
+        <div class="card" style="border: 2px solid var(--primary-blue); background: linear-gradient(180deg, #F9FBFF 0%, #FFFFFF 100%); padding: 24px; border-radius: 18px;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <span class="badge badge-blue"><i class="bi bi-person-check-fill"></i> Human-in-the-Loop Governance</span>
+            <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--dark-navy);">Procurement Award & Decision Confirmation</h4>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 18px;">
+            AI recommendations serve as analytical decision support. A procurement authority must record approval or log an override justification before contract generation.
+          </p>
+
+          <form action="{{ url_for('workflow.record_decision', request_id=proc_req.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 14px;">
+            <input type="hidden" name="recommended_supplier" value="{{ out.recommended_supplier or '' }}">
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+              <label style="border: 1.5px solid var(--border-color); border-radius: 12px; padding: 14px; cursor: pointer; background: #fff;" id="label-decision-approve">
+                <input type="radio" name="decision_action" value="approve" checked onchange="toggleDecisionFields(this.value)">
+                <strong style="display: block; margin-top: 6px; color: var(--green-accent);">Approve Recommendation</strong>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Formally award purchase order to {{ out.recommended_supplier or 'the top candidate' }}.</span>
+              </label>
+
+              <label style="border: 1.5px solid var(--border-color); border-radius: 12px; padding: 14px; cursor: pointer; background: #fff;" id="label-decision-alt">
+                <input type="radio" name="decision_action" value="alternative" onchange="toggleDecisionFields(this.value)">
+                <strong style="display: block; margin-top: 6px; color: var(--orange-accent);">Select Alternative Vendor</strong>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Override AI recommendation with business justification.</span>
+              </label>
+
+              <label style="border: 1.5px solid var(--border-color); border-radius: 12px; padding: 14px; cursor: pointer; background: #fff;" id="label-decision-reject">
+                <input type="radio" name="decision_action" value="reject" onchange="toggleDecisionFields(this.value)">
+                <strong style="display: block; margin-top: 6px; color: var(--danger);">Reject All Proposals</strong>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Disqualify all quotations and reissue procurement RFP.</span>
+              </label>
+            </div>
+
+            <!-- Alternative vendor selection dropdown (Hidden unless 'alternative' selected) -->
+            <div id="alt-vendor-wrap" style="display: none;">
+              <label style="font-size: 0.84rem; font-weight: 700; color: var(--dark-navy);">Select Alternative Supplier Candidate:</label>
+              <select name="selected_supplier" class="form-control" style="max-width: 400px; margin-top: 4px;">
+                <option value="">-- Choose alternative vendor --</option>
+                {% for rec in out.ranked_recommendations %}
+                  {% if not rec.is_recommended %}
+                    <option value="{{ rec.supplier_name }}">{{ rec.supplier_name }} (Rank #{{ rec.rank }}, Score: {{ rec.overall_score }})</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size: 0.84rem; font-weight: 700; color: var(--dark-navy);">Decision Notes & Justification:</label>
+              <textarea name="decision_reason" class="form-control" rows="2" placeholder="Record reason for award, negotiation terms, or justification for selecting an alternative vendor..." style="margin-top: 4px;"></textarea>
+            </div>
+
+            <div>
+              <button type="submit" class="btn btn-primary" id="btn-record-decision">
+                <i class="bi bi-check-circle-fill"></i> Save Procurement Decision
+              </button>
+            </div>
+          </form>
+
+          {% if decision_history and decision_history|length > 0 %}
+            <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+              <h5 style="font-size: 0.88rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Logged Human Decision History</h5>
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                {% for dh in decision_history %}
+                  <div style="font-size: 0.84rem; padding: 10px 14px; background: #fff; border: 1px solid var(--border-subtle); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-weight: 700;">
+                      <span>Awarded to: {{ dh.selected_supplier }} {% if dh.was_overridden %}<span class="badge badge-orange">Manual Override</span>{% else %}<span class="badge badge-mint">Approved Recommendation</span>{% endif %}</span>
+                      <span style="color: var(--text-muted); font-size: 0.78rem;">{{ dh.created_at }}</span>
+                    </div>
+                    <div style="color: var(--text-secondary); margin-top: 4px;">{{ dh.override_reason }}</div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <!-- 12. ACTION BUTTONS BAR (PRECISE BUTTON REQUIREMENTS) -->
+      <div class="action-buttons-bar">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <!-- Run Again Button (Always present for completed steps) -->
+          <form action="{{ url_for('workflow.run_single_step', request_id=proc_req.id, step_number=active_step) }}" method="POST" class="step-exec-form" onsubmit="return confirm('Running Step {{ active_step }} again will refresh this agent\'s calculations and invalidate dependent downstream steps. Continue?');">
+            <button type="submit" class="btn btn-outline btn-sm" id="btn-run-again-{{ active_step }}">
+              <i class="bi bi-arrow-clockwise"></i> Run Again
+            </button>
+          </form>
+
+          <!-- Step-Specific Contextual Buttons -->
+          {% if active_step == 1 %}
+            <a href="{{ url_for('procurement.request_detail', request_id=proc_req.id) }}" class="btn btn-secondary btn-sm">
+              <i class="bi bi-card-checklist"></i> Review Requirements
+            </a>
+            <a href="{{ url_for('procurement.edit_request', request_id=proc_req.id) }}" class="btn btn-outline btn-sm">
+              <i class="bi bi-pencil"></i> Edit Requirements
+            </a>
+
+          {% elif active_step == 2 %}
+            <a href="{{ url_for('analysis.review_quotations', request_id=proc_req.id) }}" class="btn btn-secondary btn-sm">
+              <i class="bi bi-file-earmark-spreadsheet"></i> Review Quotations
+            </a>
+            <form action="{{ url_for('workflow.confirm_quotes', request_id=proc_req.id) }}" method="POST" style="display: inline;">
+              <button type="submit" class="btn btn-outline btn-sm">
+                <i class="bi bi-check2-all"></i> Confirm Quotation Data
+              </button>
+            </form>
+
+          {% elif active_step == 3 %}
+            <a href="{{ url_for('suppliers.list_suppliers') }}" class="btn btn-secondary btn-sm">
+              <i class="bi bi-people"></i> Supplier Registry
+            </a>
+
+          {% elif active_step == 4 %}
+            <a href="{{ url_for('risks.list_risks', request_id=proc_req.id) }}" class="btn btn-secondary btn-sm">
+              <i class="bi bi-shield-check"></i> Risk Register
+            </a>
+
+          {% elif active_step == 5 %}
+            <a href="{{ url_for('costs.cost_optimization', request_id=proc_req.id) }}" class="btn btn-secondary btn-sm">
+              <i class="bi bi-currency-dollar"></i> Cost Optimization
+            </a>
+
+          {% elif active_step == 6 %}
+            <a href="{{ url_for('recommendations.view_recommendations', request_id=proc_req.id) }}" class="btn btn-secondary btn-sm">
+              <i class="bi bi-award"></i> View Complete Analysis
+            </a>
+            <a href="{{ url_for('reports.download_pdf', request_id=proc_req.id) }}" target="_blank" class="btn btn-outline btn-sm">
+              <i class="bi bi-eye-fill"></i> View PDF
+            </a>
+            <a href="{{ url_for('reports.download_pdf', request_id=proc_req.id, download=1) }}" download="ProcurementIQ_Report_{{ proc_req.request_code }}.pdf" class="btn btn-outline btn-sm">
+              <i class="bi bi-download"></i> Download PDF
+            </a>
+            <a href="{{ url_for('reports.download_csv', request_id=proc_req.id) }}" download="ProcurementIQ_Data_{{ proc_req.request_code }}.csv" class="btn btn-outline btn-sm">
+              <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Next Agent Execution Trigger (Single Step Execution ONLY) -->
+        <div>
+          {% if active_step < 6 %}
+            {% set next_num = active_step + 1 %}
+            {% set next_meta = steps_state[next_num - 1] %}
+            <form action="{{ url_for('workflow.run_single_step', request_id=proc_req.id, step_number=next_num) }}" method="POST" class="step-exec-form">
+              <button type="submit" class="btn btn-orange" id="btn-next-agent-{{ next_num }}">
+                <span>Next: {{ next_meta.short_name }}</span>
+                <i class="bi bi-arrow-right"></i>
+              </button>
+            </form>
+          {% else %}
+            <span class="badge badge-mint" style="font-size: 0.88rem; padding: 8px 16px;">
+              <i class="bi bi-check-circle-fill"></i> All 6 Agents Completed
+            </span>
+          {% endif %}
+        </div>
+      </div>
+
+    {% endif %}
+
+  </div>
+
+</div>
+
+<!-- Interactive Chart Initializations (Vanilla JS + Chart.js CDN) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Prevent duplicate execution clicks across all forms
+  const forms = document.querySelectorAll('.step-exec-form');
+  forms.forEach(function(f) {
+    f.addEventListener('submit', function(e) {
+      const btn = f.querySelector('button[type="submit"]');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Executing Agent... Please wait';
+      }
+    });
+  });
+
+  // Chart Rendering Logic according to Active Step
+  const activeStep = {{ active_step }};
+
+  {% if active_step_data.is_completed %}
+    const outputData = {{ active_step_data.output|tojson }};
+
+    if (activeStep === 1 && outputData.chart_data) {
+      const ctx = document.getElementById('chart-step-1');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'bar',
+          data: outputData.chart_data,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, precision: 0 }
+              }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      }
+    }
+
+    if (activeStep === 2 && outputData.chart_data) {
+      const ctx = document.getElementById('chart-step-2');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'bar',
+          data: outputData.chart_data,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: outputData.chart_data.metric_label || 'Unit Price'
+                }
+              }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      }
+    }
+
+    if (activeStep === 3 && outputData.chart_data) {
+      const ctx = document.getElementById('chart-step-3');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'bar',
+          data: outputData.chart_data,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, precision: 0 },
+                title: {
+                  display: true,
+                  text: 'Verified Records Count'
+                }
+              }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      }
+    }
+
+    if (activeStep === 4) {
+      if (outputData.chart_data_categories) {
+        const c1 = document.getElementById('chart-step-4-cat');
+        if (c1) {
+          new Chart(c1, {
+            type: 'bar',
+            data: outputData.chart_data_categories,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+              plugins: { legend: { display: false } }
+            }
+          });
+        }
+      }
+      if (outputData.chart_data_suppliers) {
+        const c2 = document.getElementById('chart-step-4-sup');
+        if (c2) {
+          new Chart(c2, {
+            type: 'bar',
+            data: outputData.chart_data_suppliers,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true, max: 100 } },
+              plugins: { legend: { display: false } }
+            }
+          });
+        }
+      }
+      if (outputData.chart_data_distribution) {
+        const c3 = document.getElementById('chart-step-4-pie');
+        if (c3) {
+          new Chart(c3, {
+            type: 'doughnut',
+            data: outputData.chart_data_distribution,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom' }
+              }
+            }
+          });
+        }
+      }
+    }
+
+    if (activeStep === 5) {
+      if (outputData.chart_data_total) {
+        const c1 = document.getElementById('chart-step-5-tot');
+        if (c1) {
+          new Chart(c1, {
+            type: 'bar',
+            data: outputData.chart_data_total,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true } },
+              plugins: { legend: { display: false } }
+            }
+          });
+        }
+      }
+      if (outputData.chart_data_components) {
+        const c2 = document.getElementById('chart-step-5-comp');
+        if (c2) {
+          new Chart(c2, {
+            type: 'bar',
+            data: outputData.chart_data_components,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true }
+              },
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+        }
+      }
+      if (outputData.chart_data_budget) {
+        const c3 = document.getElementById('chart-step-5-bud');
+        if (c3) {
+          new Chart(c3, {
+            type: 'bar',
+            data: outputData.chart_data_budget,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true } },
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+        }
+      }
+    }
+
+    if (activeStep === 6) {
+      if (outputData.chart_data_scores) {
+        const c1 = document.getElementById('chart-step-6-score');
+        if (c1) {
+          new Chart(c1, {
+            type: 'bar',
+            data: outputData.chart_data_scores,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true, max: 100 } },
+              plugins: { legend: { display: false } }
+            }
+          });
+        }
+      }
+      if (outputData.chart_data_radar) {
+        const c2 = document.getElementById('chart-step-6-radar');
+        if (c2) {
+          new Chart(c2, {
+            type: 'radar',
+            data: outputData.chart_data_radar,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                r: {
+                  min: 0,
+                  max: 100,
+                  ticks: { stepSize: 20 }
+                }
+              },
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+        }
+      }
+    }
+  {% endif %}
+});
+
+// Human decision radio toggle
+function toggleDecisionFields(action) {
+  const altWrap = document.getElementById('alt-vendor-wrap');
+  if (altWrap) {
+    altWrap.style.display = (action === 'alternative') ? 'block' : 'none';
+  }
+}
+</script>
+{% endblock %}

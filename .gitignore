@@ -1,0 +1,24 @@
+# Environment variables (Never commit sensitive API keys)
+.env
+.env.local
+*.env
+
+# SQLite Database & Uploads
+instance/
+uploads/
+*.db
+*.sqlite3
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.pytest_cache/
+
+# Antigravity & OS metadata
+.gemini/
+.DS_Store
+Thumbs.db

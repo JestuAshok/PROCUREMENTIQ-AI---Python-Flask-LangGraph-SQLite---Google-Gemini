@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Supplier — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--dark-navy);">Register New Supplier</h1>
+      <p style="color: var(--text-secondary); font-size: 0.92rem;">
+        Add a vendor to your master procurement registry for automated background checks and rating assessments.
+      </p>
+    </div>
+    <a href="{{ url_for('suppliers.list_suppliers') }}" class="btn btn-outline btn-sm">Cancel</a>
+  </div>
+
+  <div class="card" style="padding: 32px;">
+    <form action="{{ url_for('suppliers.add_supplier') }}" method="POST">
+      <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="name">Supplier Legal Name *</label>
+          <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Apex Industrial Solutions" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="code">Supplier Code</label>
+          <input type="text" id="code" name="code" class="form-control" placeholder="e.g. APX-IND">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="country">Country</label>
+          <input type="text" id="country" name="country" class="form-control" value="USA">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="category">Category</label>
+          <input type="text" id="category" name="category" class="form-control" placeholder="Industrial Equipment" value="Industrial Equipment">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="tier">Supplier Tier</label>
+          <select id="tier" name="tier" class="form-select">
+            <option value="Tier 1">Tier 1 (Strategic / Preferred)</option>
+            <option value="Tier 2">Tier 2 (Approved Alternate)</option>
+            <option value="Tier 3">Tier 3 (Transactional / Ad-hoc)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="rating">Rating (0.0 - 5.0)</label>
+          <input type="number" step="0.1" min="1.0" max="5.0" id="rating" name="rating" class="form-control" value="4.5">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="on_time_delivery_rate">On-Time Delivery Rate (%)</label>
+          <input type="number" step="0.1" min="0" max="100" id="on_time_delivery_rate" name="on_time_delivery_rate" class="form-control" value="95.0">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="defect_rate">Defect Rate (%)</label>
+          <input type="number" step="0.1" min="0" max="100" id="defect_rate" name="defect_rate" class="form-control" value="1.2">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="compliance_status">Compliance Status</label>
+          <select id="compliance_status" name="compliance_status" class="form-select">
+            <option value="Verified">Verified & Audited</option>
+            <option value="Under Review">Under Review</option>
+            <option value="Conditional">Conditional Approval</option>
+            <option value="High Risk">High Risk</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="financial_stability">Financial Stability</label>
+          <select id="financial_stability" name="financial_stability" class="form-select">
+            <option value="Strong">Strong</option>
+            <option value="Stable" selected>Stable</option>
+            <option value="Moderate">Moderate</option>
+            <option value="Caution">Caution</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="form-group">
+          <label class="form-label" for="contact_email">Contact Email</label>
+          <input type="email" id="contact_email" name="contact_email" class="form-control" placeholder="sales@supplier.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="contact_phone">Contact Phone</label>
+          <input type="text" id="contact_phone" name="contact_phone" class="form-control" placeholder="+1-800-555-0199">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="notes">Audit & Reliability Notes</label>
+        <textarea id="notes" name="notes" class="form-control" placeholder="ISO certifications, regional warehouse hubs, facility audits, or past performance notes..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 14px; margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+        <a href="{{ url_for('suppliers.list_suppliers') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary" id="btn-save-supplier">
+          <i class="bi bi-check-lg"></i>
+          <span>Save Supplier</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

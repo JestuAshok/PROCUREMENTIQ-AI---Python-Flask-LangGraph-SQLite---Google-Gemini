@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found — PROCUREMENTIQ AI{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align: center; padding: 80px 20px; max-width: 600px; margin: 40px auto;">
+  <div style="font-size: 3.5rem; font-weight: 800; color: var(--primary-blue); margin-bottom: 12px;">404</div>
+  <h2 style="font-size: 1.5rem; color: var(--dark-navy); margin-bottom: 12px;">Dossier or Page Not Found</h2>
+  <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 0.95rem;">
+    The procurement request, supplier record, or page you were looking for does not exist or has been archived.
+  </p>
+  <div>
+    <a href="{{ url_for('dashboard.dashboard_view') }}" class="btn btn-primary">
+      <i class="bi bi-grid-1x2"></i> Return to Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}
